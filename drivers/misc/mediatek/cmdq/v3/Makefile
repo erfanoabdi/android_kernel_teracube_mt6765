@@ -71,7 +71,7 @@ ifeq ($(CONFIG_TRUSTONIC_TEE_SUPPORT),y)
 include $(srctree)/drivers/tee/gud/Makefile.include
 endif
 
-ifeq ($(CONFIG_MICROTRUST_TEE_SUPPORT),y)
+ifeq ($(or $(strip $(CONFIG_MICROTRUST_TEE_SUPPORT)), $(strip $(CONFIG_MICROTRUST_TEE_LITE_SUPPORT))),y)
 include $(srctree)/drivers/tee/teei/Makefile.include
 endif
 
@@ -87,6 +87,7 @@ ifeq ($(strip $(CONFIG_MTK_TEE_GP_SUPPORT)),y)
 ccflags-y += -DCMDQ_GP_SUPPORT
 endif
 
+ifeq ($(strip $(CONFIG_MICROTRUST_TEE_SUPPORT)),y)
 ifeq ($(strip $(CONFIG_MTK_CAM_SECURITY_SUPPORT)),y)
 ifeq ($(strip $(CONFIG_MTK_CAM_GENIEZONE_SUPPORT)),y)
 ifeq ($(strip $(CONFIG_MTK_ENABLE_GENIEZONE)),y)
@@ -104,6 +105,7 @@ endif
 ifeq ($(strip $(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT)),y)
 ccflags-y += -DCMDQ_SECURE_TEE_SUPPORT
 obj-y += cmdq_sec_gp.o
+endif
 endif
 
 # platform dependent definition
