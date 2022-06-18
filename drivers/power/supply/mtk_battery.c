@@ -379,6 +379,24 @@ static int battery_psy_get_property(struct power_supply *psy,
 	return ret;
 }
 
+int battery_get_bat_temperature(void) //zxs 20210615
+{
+
+/*	struct mtk_battery *gm;
+
+	gm = get_mtk_battery();
+
+	gm->bs_data.bat_batt_temp = force_get_tbat(gm, true);
+	return gm->bs_data.bat_batt_temp;
+*/	
+
+		int val;
+
+	battery_get_property(BAT_PROP_TEMPERATURE, &val);
+	return val;
+
+
+}
 static void mtk_battery_external_power_changed(struct power_supply *psy)
 {
 	struct mtk_battery *gm;
@@ -439,7 +457,6 @@ static void mtk_battery_external_power_changed(struct power_supply *psy)
 			if (gm->chr_type == POWER_SUPPLY_TYPE_UNKNOWN)
 				wakeup_fg_algo(gm, FG_INTR_CHARGER_IN);
 		}
-
 	}
 
 	bm_err("%s event, name:%s online:%d, status:%d, EOC:%d, cur_chr_type:%d old:%d\n",
@@ -447,8 +464,123 @@ static void mtk_battery_external_power_changed(struct power_supply *psy)
 		gm->b_EOC, cur_chr_type, gm->chr_type);
 
 	gm->chr_type = cur_chr_type;
+}
+
+//Add armin
+int  mtk_battery_external_power_changed_ovp(void)
+{
+	struct mtk_battery *gm;
+	struct battery_data *bs_data;	
+	struct power_supply *psy;
+
+	psy = power_supply_get_by_name("battery"); 
+	if (psy == NULL) 
+	    return -ENODEV; 
+	
+	bm_err("%s get psy done\n",__func__);
+	
+	gm = (struct mtk_battery *)power_supply_get_drvdata(psy);
+	gm = psy->drv_data;
+	bs_data = &gm->bs_data; 
+
+	bm_err("%s get gm done\n",__func__);
+	
+	//if (online.intval)
+		bs_data->bat_status = POWER_SUPPLY_STATUS_DISCHARGING;
+
+	battery_update(gm);
+	bm_err("%s event, name:%s , EOC:%d,  chr_type: old:%d\n",
+		__func__, psy->desc->name,
+		gm->b_EOC, gm->chr_type);
+
+	return 0;
 
 }
+
+int mtk_battery_external_power_changed_recover(void)
+{
+	struct mtk_battery *gm;
+	struct battery_data *bs_data;	
+	struct power_supply *psy;
+
+	union power_supply_propval online, status;
+	//union power_supply_propval prop_type;
+	struct power_supply *chg_psy = NULL;
+	int ret;
+
+	psy = power_supply_get_by_name("battery"); 
+	if (psy == NULL) 
+	    return -ENODEV; 
+	
+	bm_err("%s get psy done\n",__func__);
+	
+	gm = (struct mtk_battery *)power_supply_get_drvdata(psy);
+	gm = psy->drv_data;
+	bs_data = &gm->bs_data; 
+
+	bm_err("%s get gm done\n",__func__);
+
+	chg_psy = devm_power_supply_get_by_phandle(&gm->gauge->pdev->dev,
+						       "charger");
+	if (IS_ERR_OR_NULL(chg_psy)) {
+		bm_err("%s Couldn't get chg_psy\n", __func__);
+	} else {
+		ret = power_supply_get_property(chg_psy,
+			POWER_SUPPLY_PROP_ONLINE, &online);
+
+		ret = power_supply_get_property(chg_psy,
+			POWER_SUPPLY_PROP_STATUS, &status);
+
+		if (!online.intval)
+			bs_data->bat_status = POWER_SUPPLY_STATUS_DISCHARGING;
+		else {
+			if (status.intval == POWER_SUPPLY_STATUS_NOT_CHARGING)
+				bs_data->bat_status =
+					POWER_SUPPLY_STATUS_NOT_CHARGING;
+			else
+				bs_data->bat_status =
+					POWER_SUPPLY_STATUS_CHARGING;
+			fg_sw_bat_cycle_accu(gm);
+		}
+		battery_update(gm);
+    }
+	
+	bm_err("%s event, name:%s online:%d, status:%d, EOC:%d, chr_type: old:%d\n",
+		__func__, psy->desc->name, online.intval, status.intval,
+		gm->b_EOC,  gm->chr_type);
+
+	return 0;
+}
+
+//Add armin end
+int mtk_battery_external_power_changed_full(void) //zxs
+{
+	struct mtk_battery *gm;
+	struct battery_data *bs_data;	
+	struct power_supply *psy;
+
+	psy = power_supply_get_by_name("battery"); 
+	if (psy == NULL) 
+	    return -ENODEV; 
+	
+	bm_err("%s get psy done\n",__func__);
+	
+	gm = (struct mtk_battery *)power_supply_get_drvdata(psy);
+	gm = psy->drv_data;
+	bs_data = &gm->bs_data; 
+
+	bm_err("%s get gm done\n", __func__);
+	
+	//if (online.intval)
+	bs_data->bat_status = POWER_SUPPLY_STATUS_FULL;
+	battery_update(gm);
+
+	bm_err("%s event, name:%s , EOC:%d,  chr_type: old:%d\n",
+		__func__, psy->desc->name, gm->b_EOC, gm->chr_type);
+		
+	return 0;
+}
+
 void battery_service_data_init(struct mtk_battery *gm)
 {
 	struct battery_data *bs_data;
@@ -484,16 +616,17 @@ int BattThermistorConverTemp(struct mtk_battery *gm, int Res)
 	int TBatt_Value = -2000, TMP1 = 0, TMP2 = 0;
 	struct fuelgauge_temperature *ptable;
 
+     int Temp_size =24;
 	ptable = gm->tmp_table;
 	if (Res >= ptable[0].TemperatureR) {
-		TBatt_Value = -400;
-	} else if (Res <= ptable[20].TemperatureR) {
-		TBatt_Value = 600;
+		TBatt_Value =ptable[0].BatteryTemp*10;
+	} else if (Res <= ptable[Temp_size-1].TemperatureR) {
+		TBatt_Value =ptable[Temp_size-1].BatteryTemp*10;
 	} else {
 		RES1 = ptable[0].TemperatureR;
 		TMP1 = ptable[0].BatteryTemp;
 
-		for (i = 0; i <= 20; i++) {
+		for (i = 0; i <= (Temp_size-1); i++) { 
 			if (Res >= ptable[i].TemperatureR) {
 				RES2 = ptable[i].TemperatureR;
 				TMP2 = ptable[i].BatteryTemp;
@@ -1815,7 +1948,6 @@ void battery_update(struct mtk_battery *gm)
 		bat_data->bat_capacity = gm->ui_soc;
 
 	power_supply_changed(bat_psy);
-
 }
 
 /* ============================================================ */
@@ -2504,6 +2636,11 @@ static void wake_up_overheat(struct shutdown_controller *sdd)
 	wake_up(&sdd->wait_que);
 }
 
+static void wake_up_overcold(struct shutdown_controller *sdd)
+{
+	sdd->overcold = true;
+	wake_up(&sdd->wait_que);
+}
 void set_shutdown_vbat_lt(struct mtk_battery *gm, int vbat_lt, int vbat_lt_lv1)
 {
 	gm->sdc.vbat_lt = vbat_lt;
@@ -2627,6 +2764,13 @@ int set_shutdown_cond(struct mtk_battery *gm, int shutdown_cond)
 		sdc->shutdown_status.is_overheat = true;
 		mutex_unlock(&sdc->lock);
 		bm_debug("[%s]OVERHEAT shutdown!\n", __func__);
+		kernel_power_off();
+		break;
+	case OVERCOLD:
+		mutex_lock(&sdc->lock);
+		sdc->shutdown_status.is_overcold= true;
+		mutex_unlock(&sdc->lock);
+		bm_debug("[%s]OVERCOLD shutdown!\n", __func__);
 		kernel_power_off();
 		break;
 	case SOC_ZERO_PERCENT:
@@ -2931,7 +3075,7 @@ static int power_misc_routine_thread(void *arg)
 
 	while (1) {
 		wait_event(sdd->wait_que, (sdd->timeout == true)
-			|| (sdd->overheat == true));
+			|| (sdd->overheat == true)|| (sdd->overcold== true));
 		if (sdd->timeout == true) {
 			sdd->timeout = false;
 			power_misc_handler(gm);
@@ -2939,6 +3083,13 @@ static int power_misc_routine_thread(void *arg)
 		if (sdd->overheat == true) {
 			sdd->overheat = false;
 			bm_debug("%s battery overheat~ power off\n",
+				__func__);
+			kernel_power_off();
+			return 1;
+		}
+		if (sdd->overcold== true) {
+			sdd->overcold = false;
+			bm_debug("%s battery overcold~ power off\n",
 				__func__);
 			kernel_power_off();
 			return 1;
@@ -2968,6 +3119,13 @@ static int mtk_power_misc_psy_event(
 					gm->cur_bat_temp, tmp);
 
 				wake_up_overheat(sdc);
+			}
+			if (gm->cur_bat_temp <= BATTERY_SHUTDOWN_TEMPERATURE_OVERCOLD) { 
+				bm_debug(
+					"%d battery temperature <= %d,shutdown",
+					gm->cur_bat_temp, tmp);
+
+				wake_up_overcold(sdc);
 			}
 		}
 	}
@@ -3113,7 +3271,8 @@ int battery_init(struct platform_device *pdev)
 	fg_check_bootmode(&pdev->dev, gm);
 	fg_check_lk_swocv(&pdev->dev, gm);
 	fg_custom_init_from_header(gm);
-	fg_custom_init_from_dts(pdev, gm);
+	//Close Armin 20210225
+	//fg_custom_init_from_dts(pdev, gm);
 
 	gauge_coulomb_service_init(gm);
 	gm->coulomb_plus.callback = fg_coulomb_int_h_handler;

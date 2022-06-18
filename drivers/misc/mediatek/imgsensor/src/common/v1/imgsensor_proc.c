@@ -15,8 +15,14 @@
 
 char mtk_ccm_name[camera_info_size] = { 0 };
 char mtk_i2c_dump[camera_info_size] = { 0 };
-
-
+// light start
+#if defined(MACRO_CAM_DEV_NODE)
+char macro_cam[macro_cam_size] = { 0 };
+#endif
+#if defined(WIDE_ANGLE_CAM_DEV)
+char wide_angle_cam[wide_angle_cam_size] = { 0 };
+#endif
+// light end
 
 
 static int pdaf_type_info_read(struct seq_file *m, void *v)
@@ -484,6 +490,42 @@ static const struct file_operations fcamera_proc_fops_set_pdaf_type = {
 };
 
 
+// light start
+#if defined(MACRO_CAM_DEV_NODE)
+static int macro_cam_read(struct seq_file *m, void *v)
+{
+	pr_debug("%s %s\n", __func__, macro_cam);
+	seq_printf(m, "%s\n", macro_cam);
+	return 0;
+};
+static int proc_macro_cam_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, macro_cam_read, NULL);
+};
+static const struct file_operations fcamera_proc_macro_fops = {
+	.owner = THIS_MODULE,
+	.open = proc_macro_cam_open,
+	.read = seq_read,
+};
+#endif
+#if defined(WIDE_ANGLE_CAM_DEV)
+static int wide_angle_cam_read(struct seq_file *m, void *v)
+{
+	pr_debug("%s %s\n", __func__, wide_angle_cam);
+	seq_printf(m, "%s\n", wide_angle_cam);
+	return 0;
+};
+static int wide_angle_cam_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, wide_angle_cam_read, NULL);
+};
+static const struct file_operations fcamera_wide_angle_fops = {
+	.owner = THIS_MODULE,
+	.open = wide_angle_cam_open,
+	.read = seq_read,
+};
+#endif
+// light end
 
 enum IMGSENSOR_RETURN imgsensor_proc_init(void)
 {
@@ -499,6 +541,16 @@ enum IMGSENSOR_RETURN imgsensor_proc_init(void)
 
 	/* Camera information */
 	proc_create(PROC_CAMERA_INFO, 0664, NULL, &fcamera_proc_fops1);
+// light start
+#if defined(MACRO_CAM_DEV_NODE)
+	memset(macro_cam, 0, macro_cam_size);
+	proc_create(PROC_MACRO_CAM, 0664, NULL, &fcamera_proc_macro_fops);
+#endif
+#if defined(WIDE_ANGLE_CAM_DEV)
+	memset(wide_angle_cam, 0, wide_angle_cam_size);
+	proc_create(PROC_WIDE_ANGLE_CAM, 0664, NULL, &fcamera_wide_angle_fops);
+#endif
+// light end
 
 	return IMGSENSOR_RETURN_SUCCESS;
 }

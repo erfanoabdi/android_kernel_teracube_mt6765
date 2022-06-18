@@ -1038,13 +1038,17 @@ firmware_class.path=/vendor/firmware";
 	};
 
 	touch: touch {
-		compatible = "goodix,touch";
+		compatible = "mediatek,touch";
 	};
 
 	accdet: accdet {
 		compatible = "mediatek,pmic-accdet";
 	};
 
+	/*ICN fingerprint*/
+	icnfpsensor:icnfpsensor@0 {
+		compatible = "mediatek,icnfpsensor";
+	};
 	goodix_fp: fingerprint {
 		compatible = "mediatek,goodix-fp";
 	};
@@ -2482,7 +2486,7 @@ firmware_class.path=/vendor/firmware";
 		clock-names = "usb0",
 			"usb0_clk_top_sel",
 			"usb0_clk_univpll3_d4";
-		charger = <&mt6370_chg>;
+		charger = <&mtk_charger_type>;
 	};
 
 	usb_sif@11210000 {
@@ -2972,7 +2976,12 @@ firmware_class.path=/vendor/firmware";
 		reg = <0 0x14015000 0 0x1000>;
 		interrupts = <GIC_SPI 276 IRQ_TYPE_LEVEL_LOW>;
 	};
-
+	flashlights_constant_gpio: flashlights_constant_gpio {
+		compatible = "mediatek,flashlights_constant_gpio";
+	};
+	lcd_id_node: lcd_id {
+		compatible = "mediatek,lcd_id_gpio";
+	};
 	mtkfb: mtkfb@0 {
 		compatible = "mediatek,mtkfb";
 	};
@@ -3471,7 +3480,7 @@ firmware_class.path=/vendor/firmware";
 	charger: charger {
 		compatible = "mediatek,charger";
 		gauge = <&mtk_gauge>;
-		charger = <&mt6370_chg>;
+		charger = <&mtk_charger_type>;
 		bootmode = <&chosen>;
 		pmic = <&main_pmic>;
 
@@ -3809,8 +3818,8 @@ firmware_class.path=/vendor/firmware";
 #include "mediatek/cust_mt6765_msdc.dtsi"
 #include "mediatek/mt6357.dtsi"
 #include "mediatek/bat_setting/mt6765_battery_prop.dtsi"
-#include "mediatek/mt6370.dtsi"
-#include "mediatek/mt6370_pd.dtsi"
+/* #include "mediatek/mt6370.dtsi" */
+/* #include "mediatek/mt6370_pd.dtsi" */
 #ifdef CONFIG_CHARGER_RT9471
 #include "mediatek/rt9471.dtsi"
 #endif

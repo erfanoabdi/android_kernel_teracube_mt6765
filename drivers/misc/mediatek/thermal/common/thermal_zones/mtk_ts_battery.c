@@ -423,7 +423,8 @@ struct thermal_cooling_device *cdev, unsigned long state)
 		/* To trigger data abort to reset the system
 		 * for thermal protection.
 		 */
-		BUG();
+		 pr_err("[Armin-tsbat]tsbat_sysrst_set_cur_state: power off !!!");
+		machine_power_off();
 	}
 	return 0;
 }

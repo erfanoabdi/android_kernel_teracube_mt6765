@@ -1321,6 +1321,11 @@ static int mt6357_led_probe(struct platform_device *pdev)
 		leds->led[reg]->l_info.cdev.brightness_set =
 					mt6357_led_set_brightness;
 		leds->led[reg]->l_info.cdev.blink_set = mt6357_led_set_blink;
+/* light start */
+#if defined(LED_SOFTWARE_BLINK)
+		leds->led[reg]->l_info.cdev.blink_set = NULL;
+#endif
+// light end
 		leds->led[reg]->l_info.cdev.brightness_get =
 					mt6357_get_led_hw_brightness;
 		leds->led[reg]->l_info.magic_code = MT_LED_ALL_MAGIC_CODE;

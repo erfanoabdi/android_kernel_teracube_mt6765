@@ -1,6 +1,14 @@
-// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (C) 2018 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  */
 
 #include <linux/videodev2.h>
@@ -36,7 +44,8 @@ static struct gc5035_otp_t gc5035_otp_data;
 
 static struct imgsensor_info_struct imgsensor_info = {
 	.sensor_id = GC5035_SENSOR_ID,
-	.checksum_value = 0xdc9f7d95,
+	//.checksum_value = 0xcde448ca,
+      .checksum_value = 0xdc9f7d95,//cjc add for smt
 
 	.pre = {
 		.pclk = 87600000,
@@ -670,7 +679,7 @@ static kal_uint8 gc5035_otp_identify(void)
 	write_cmos_sensor(0xfe, 0x02);
 	write_cmos_sensor(0x67, 0xc0);
 	write_cmos_sensor(0x59, 0x3f);
-	write_cmos_sensor(0x55, 0x80);
+	write_cmos_sensor(0x55, 0x84);
 	write_cmos_sensor(0x65, 0x80);
 	write_cmos_sensor(0x66, 0x03);
 	write_cmos_sensor(0xfe, 0x00);
@@ -698,7 +707,7 @@ static void gc5035_otp_function(void)
 	write_cmos_sensor(0xfe, 0x02);
 	write_cmos_sensor(0x67, 0xc0);
 	write_cmos_sensor(0x59, 0x3f);
-	write_cmos_sensor(0x55, 0x80);
+	write_cmos_sensor(0x55, 0x84);
 	write_cmos_sensor(0x65, 0x80);
 	write_cmos_sensor(0x66, 0x03);
 	write_cmos_sensor(0xfe, 0x00);
@@ -1019,16 +1028,16 @@ static void sensor_init(void)
 	write_cmos_sensor(0x1a, 0x1a);
 	write_cmos_sensor(0x1f, 0x11);
 	write_cmos_sensor(0x20, 0x10);
-	write_cmos_sensor(0x46, 0xe3);
+	write_cmos_sensor(0x46, 0x83);
 	write_cmos_sensor(0x4a, 0x04);
 	write_cmos_sensor(0x54, GC5035_RSTDUMMY1);
 	write_cmos_sensor(0x62, 0x00);
-	write_cmos_sensor(0x72, 0xcf);
-	write_cmos_sensor(0x73, 0xc9);
+	write_cmos_sensor(0x72, 0x8f);
+	write_cmos_sensor(0x73, 0x89);
 	write_cmos_sensor(0x7a, 0x05);
 	write_cmos_sensor(0x7d, 0xcc);
 	write_cmos_sensor(0x90, 0x00);
-	write_cmos_sensor(0xce, 0x98);
+	write_cmos_sensor(0xce, 0x18);
 	write_cmos_sensor(0xd0, 0xb2);
 	write_cmos_sensor(0xd2, 0x40);
 	write_cmos_sensor(0xe6, 0xe0);
@@ -1085,7 +1094,7 @@ static void sensor_init(void)
 	write_cmos_sensor(0x4d, 0x00);
 	write_cmos_sensor(0x4e, 0x3c);
 	write_cmos_sensor(0x44, 0x08);
-	write_cmos_sensor(0x48, 0x01);
+	write_cmos_sensor(0x48, 0x02);
 
 	/* Crop */
 	write_cmos_sensor(0xfe, 0x01);
@@ -1179,7 +1188,7 @@ static void preview_setting(void)
 	write_cmos_sensor(0xd5, 0xf0);
 	write_cmos_sensor(0x97, 0x20);
 	write_cmos_sensor(0x1f, 0x19);
-	write_cmos_sensor(0xce, 0x9b);
+	write_cmos_sensor(0xce, 0x18);
 	write_cmos_sensor(0xd0, 0xb3);
 	write_cmos_sensor(0xfe, 0x02);
 	write_cmos_sensor(0x14, 0x02);
@@ -1298,7 +1307,7 @@ static void capture_setting(kal_uint16 currefps)
 	write_cmos_sensor(0xd5, 0xfc);
 	write_cmos_sensor(0x97, 0x28);
 	write_cmos_sensor(0x1f, 0x11);
-	write_cmos_sensor(0xce, 0x98);
+	write_cmos_sensor(0xce, 0x18);
 	write_cmos_sensor(0xd0, 0xb2);
 	write_cmos_sensor(0xfe, 0x02);
 	write_cmos_sensor(0x14, 0x01);
@@ -1410,7 +1419,7 @@ static void normal_video_setting(kal_uint16 currefps)
 	write_cmos_sensor(0xd5, 0xf0);
 	write_cmos_sensor(0x97, 0x20);
 	write_cmos_sensor(0x1f, 0x19);
-	write_cmos_sensor(0xce, 0x9b);
+	write_cmos_sensor(0xce, 0x18);
 	write_cmos_sensor(0xd0, 0xb3);
 	write_cmos_sensor(0xfe, 0x02);
 	write_cmos_sensor(0x14, 0x02);
@@ -1524,7 +1533,7 @@ static void hs_video_setting(void)
 	write_cmos_sensor(0xd5, 0xf0);
 	write_cmos_sensor(0x97, 0x20);
 	write_cmos_sensor(0x1f, 0x19);
-	write_cmos_sensor(0xce, 0x9b);
+	write_cmos_sensor(0xce, 0x18);
 	write_cmos_sensor(0xd0, 0xb3);
 	write_cmos_sensor(0xfe, 0x02);
 	write_cmos_sensor(0x14, 0x02);
@@ -1641,7 +1650,7 @@ static void slim_video_setting(void)
 	write_cmos_sensor(0xd5, 0xf0);
 	write_cmos_sensor(0x97, 0x20);
 	write_cmos_sensor(0x1f, 0x19);
-	write_cmos_sensor(0xce, 0x9b);
+	write_cmos_sensor(0xce, 0x18);
 	write_cmos_sensor(0xd0, 0xb3);
 	write_cmos_sensor(0xfe, 0x02);
 	write_cmos_sensor(0x14, 0x02);
@@ -1673,7 +1682,7 @@ static void slim_video_setting(void)
 	/* Crop */
 	write_cmos_sensor(0xfe, 0x01);
 	write_cmos_sensor(0x91, 0x00);
-	write_cmos_sensor(0x92, 0x0a);
+	write_cmos_sensor(0x92, 0x82);
 	write_cmos_sensor(0x93, 0x00);
 	write_cmos_sensor(0x94, 0x0b);
 	write_cmos_sensor(0x95, 0x02);
@@ -1718,7 +1727,7 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 	kal_uint8 i = 0;
 	kal_uint8 retry = 2;
 
-	cam_pr_debug("E\n");
+	printk("gc5035,get_imgsensor_id()\n");
 
 	while (imgsensor_info.i2c_addr_table[i] != 0xff) {
 		spin_lock(&imgsensor_drv_lock);
@@ -1726,13 +1735,15 @@ static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 		spin_unlock(&imgsensor_drv_lock);
 		do {
 			*sensor_id = return_sensor_id();
+			//if (m_SensorSel==1) //if front camera not use this driver
+        	             //   *sensor_id = 0xFFFFFFFF;
 			if (*sensor_id == imgsensor_info.sensor_id) {
 				gc5035_otp_identify();
-				cam_pr_debug("i2c write id: 0x%x, sensor id: 0x%x\n",
+				printk("gc5035,i2c write id: 0x%x, sensor id: 0x%x\n",
 					imgsensor.i2c_write_id, *sensor_id);
 				return ERROR_NONE;
 			}
-			cam_pr_debug("Read sensor id fail, write id: 0x%x, id: 0x%x\n",
+			printk("gc5035,Read sensor id fail, write id: 0x%x, id: 0x%x\n",
 				imgsensor.i2c_write_id, *sensor_id);
 			retry--;
 		} while (retry > 0);
@@ -1766,6 +1777,8 @@ static kal_uint32 open(void)
 		spin_unlock(&imgsensor_drv_lock);
 		do {
 			sensor_id = return_sensor_id();
+			//if (m_SensorSel==1) //if front camera not use this driver
+        	               // sensor_id = 0xFFFFFFFF;
 			if (sensor_id == imgsensor_info.sensor_id) {
 				pr_debug("i2c write id: 0x%x, sensor id: 0x%x\n",
 					imgsensor.i2c_write_id, sensor_id);
@@ -2288,23 +2301,6 @@ static kal_uint32 get_default_framerate_by_scenario(
 }
 
 
-static kal_uint32 streaming_control(kal_bool enable)
-{
-	cam_pr_debug("streaming_enable(0=Sw Standby,1=streaming): %d\n",
-		enable);
-	if (enable) {
-		/* MIPI */
-		write_cmos_sensor(0xfe, 0x00);
-		write_cmos_sensor(0x3e, 0x91); /*Stream on */
-	} else {
-		/* MIPI */
-		write_cmos_sensor(0xfe, 0x00);
-		write_cmos_sensor(0x3e, 0x01); /*Stream off */
-	}
-
-	mdelay(10);
-	return ERROR_NONE;
-}
 
 static kal_uint32 feature_control(
 	MSDK_SENSOR_FEATURE_ENUM feature_id,
@@ -2340,6 +2336,31 @@ static kal_uint32 feature_control(
 		*feature_return_para_32 = imgsensor.pclk;
 		*feature_para_len = 4;
 		break;
+	case SENSOR_FEATURE_GET_MIPI_PIXEL_RATE:
+		{
+			kal_uint32 rate;
+
+			switch (*feature_data) {
+			case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
+				rate = imgsensor_info.cap.mipi_pixel_rate;
+				break;
+			case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+				rate = imgsensor_info.normal_video.mipi_pixel_rate;
+				break;
+			case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
+				rate = imgsensor_info.hs_video.mipi_pixel_rate;
+				break;
+			case MSDK_SCENARIO_ID_SLIM_VIDEO:
+				rate = imgsensor_info.slim_video.mipi_pixel_rate;
+				break;
+			case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
+			default:
+				rate = imgsensor_info.pre.mipi_pixel_rate;
+				break;
+			}
+			*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = rate;
+		}
+		break;
 	case SENSOR_FEATURE_SET_ESHUTTER:
 		set_shutter(*feature_data);
 		break;
@@ -2362,6 +2383,8 @@ static kal_uint32 feature_control(
 			read_cmos_sensor(sensor_reg_data->RegAddr);
 		break;
 	case SENSOR_FEATURE_GET_LENS_DRIVER_ID:
+		/* get the lens driver ID from EEPROM or just return LENS_DRIVER_ID_DO_NOT_CARE */
+		/* if EEPROM does not exist in camera module. */
 		*feature_return_para_32 = LENS_DRIVER_ID_DO_NOT_CARE;
 		*feature_para_len = 4;
 		break;
@@ -2388,7 +2411,7 @@ static kal_uint32 feature_control(
 	case SENSOR_FEATURE_SET_TEST_PATTERN:
 		set_test_pattern_mode((BOOL) * feature_data);
 		break;
-	case SENSOR_FEATURE_GET_TEST_PATTERN_CHECKSUM_VALUE:
+	case SENSOR_FEATURE_GET_TEST_PATTERN_CHECKSUM_VALUE: /*for factory mode auto testing */
 		*feature_return_para_32 = imgsensor_info.checksum_value;
 		*feature_para_len = 4;
 		break;
@@ -2448,76 +2471,7 @@ static kal_uint32 feature_control(
 			(UINT16) *(feature_data + 1),
 			(UINT16) *(feature_data + 2));
 		break;
-	case SENSOR_FEATURE_GET_MIPI_PIXEL_RATE:
-	{
-		kal_uint32 rate;
 
-		switch (*feature_data) {
-		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
-			rate = imgsensor_info.cap.mipi_pixel_rate;
-			break;
-		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
-			rate = imgsensor_info.normal_video.mipi_pixel_rate;
-			break;
-		case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
-			rate = imgsensor_info.hs_video.mipi_pixel_rate;
-			break;
-		case MSDK_SCENARIO_ID_SLIM_VIDEO:
-			rate = imgsensor_info.slim_video.mipi_pixel_rate;
-			break;
-		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
-		default:
-			rate = imgsensor_info.pre.mipi_pixel_rate;
-			break;
-		}
-		*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) = rate;
-	}
-		break;
-	case SENSOR_FEATURE_SET_STREAMING_SUSPEND:
-		cam_pr_debug("SENSOR_FEATURE_SET_STREAMING_SUSPEND\n");
-		streaming_control(KAL_FALSE);
-		break;
-	case SENSOR_FEATURE_SET_STREAMING_RESUME:
-		cam_pr_debug("SENSOR_FEATURE_SET_STREAMING_RESUME, shutter:%llu\n",
-			*feature_data);
-		if (*feature_data != 0)
-			set_shutter(*feature_data);
-		streaming_control(KAL_TRUE);
-		break;
-	case SENSOR_FEATURE_GET_PIXEL_RATE:
-	{
-		kal_uint32 rate;
-
-		switch (*feature_data) {
-		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
-			rate = (imgsensor_info.cap.pclk /
-			       (imgsensor_info.cap.linelength - 80))*
-			       imgsensor_info.cap.grabwindow_width;
-			break;
-		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
-			rate = (imgsensor_info.normal_video.pclk /
-			       (imgsensor_info.normal_video.linelength - 80))*
-			       imgsensor_info.normal_video.grabwindow_width;
-			break;
-		case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
-			rate = (imgsensor_info.hs_video.pclk /
-			       (imgsensor_info.hs_video.linelength - 80))*
-			       imgsensor_info.hs_video.grabwindow_width;
-			break;
-		case MSDK_SCENARIO_ID_SLIM_VIDEO:
-			rate = (imgsensor_info.slim_video.pclk /
-			       (imgsensor_info.slim_video.linelength - 80))*
-			       imgsensor_info.slim_video.grabwindow_width;
-			break;
-		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
-		default:
-			rate = (imgsensor_info.pre.pclk /
-			       (imgsensor_info.pre.linelength - 80))*
-			       imgsensor_info.pre.grabwindow_width;
-			break;
-		}
-		*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = rate;
-	}
 		break;
 	default:
 		break;
@@ -2535,7 +2489,7 @@ static struct SENSOR_FUNCTION_STRUCT sensor_func = {
 	close
 };
 
-UINT32 GC5035MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc)
+UINT32 GC5035_MIPI_RAW_SensorInit(struct SENSOR_FUNCTION_STRUCT **pfFunc)
 {
 	cam_pr_debug("E\n");
 	/* To Do : Check Sensor status here */

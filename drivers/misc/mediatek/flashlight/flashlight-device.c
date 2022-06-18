@@ -45,7 +45,7 @@ const struct flashlight_device_id flashlight_id[] = {
 	{0, 0, 0, "flashlights-rt5081", 0, 0},
 	{0, 1, 0, "flashlights-rt5081", 1, 0},
 };
-#elif defined(mt6761)
+#elif 0//defined(mt6761) //xjl 20191008
 	#ifdef CONFIG_MTK_FLASHLIGHT_AW3644
 	const struct flashlight_device_id flashlight_id[] = {
 	/* {TYPE, CT, PART, "NAME", CHANNEL, DECOUPLE} */
@@ -90,9 +90,17 @@ const struct flashlight_device_id flashlight_id[] = {
 #else
 const struct flashlight_device_id flashlight_id[] = {
 	/* {TYPE, CT, PART, "NAME", CHANNEL, DECOUPLE} */
+#if !defined(CONFIG_MTK_FLASHLIGHT_MT6370) //modified by xen 20180706
+	{0, 0, 0, "flashlights-constant-gpio", 0, 0}, 
+#else
 	{0, 0, 0, "flashlights-none", -1, 0},
+#endif
 	{0, 1, 0, "flashlights-none", -1, 0},
+#if defined(SUB_FLASHLIGHT_SUPPORT) && !defined(CONFIG_MTK_FLASHLIGHT_MT6370) //xen 20180706
+	{1, 0, 0, "flashlights-constant-gpio", 1, 0},
+#else
 	{1, 0, 0, "flashlights-none", -1, 0},
+#endif
 	{1, 1, 0, "flashlights-none", -1, 0},
 	{0, 0, 1, "flashlights-none", -1, 0},
 	{0, 1, 1, "flashlights-none", -1, 0},

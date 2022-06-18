@@ -21,6 +21,9 @@ obj-$(CONFIG_MTK_LCM) += mt65xx_lcm_list.o        \
                          lcm_i2c.o                \
                          lcm_pmic.o               \
                          lcm_util.o
+##ifneq ($(findstring YK_LCM_5V_IC_SUPPORT, $(strip $(YK_CUSTOMER_CONFIG))),)
+obj-$(CONFIG_MTK_LCM) += lcm_ocp2131.o
+##endif
 
 LCM_LISTS := $(subst ",,$(CONFIG_CUSTOM_KERNEL_LCM))
 obj-$(CONFIG_MTK_LCM) += $(foreach LCM,$(LCM_LISTS),$(LCM)/)

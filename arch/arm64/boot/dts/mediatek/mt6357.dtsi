@@ -105,7 +105,7 @@
 
 	mtk_gauge: mtk_gauge {
 		compatible = "mediatek,mt6357-gauge";
-		charger = <&mt6370_chg>;
+		charger = <&mtk_charger_type>;
 		bootmode = <&chosen>;
 		io-channels = <&pmic_auxadc AUXADC_BAT_TEMP>,
 				<&pmic_auxadc AUXADC_ISENSE>,
@@ -125,7 +125,7 @@
 		compatible = "mediatek,mt6357-charger-type";
 		io-channels = <&pmic_auxadc AUXADC_VCDT>;
 		io-channel-names = "pmic_vbus";
-		bc12_active = <0>;
+		bc12_active = <1>;
 	};
 
 	mt6357_charger: mt6357_charger {
@@ -453,15 +453,18 @@
 
 	clock_buffer_ctrl: clock_buffer_ctrl {
 		compatible = "mediatek,clock_buffer";
-		n-clkbuf-pmic-dependent = <5>;
+		n-clkbuf-pmic-dependent = <9>;
 		clkbuf-pmic-dependent = "pmic-drvcurr",
 					"pmic-auxout-sel",
 					"pmic-auxout-xo",
 					"pmic-auxout-drvcurr",
-					"pmic-auxout-bblpm-en";
+					"pmic-auxout-bblpm-en",
+					"pmic-cofst-fpm",
+					"pmic-cdac-fpm",
+					"pmic-core-idac-fpm",
+					"pmic-aac-fpm-swen";
 
 		pmic-dcxo-cw = <0x788>;
-		pmic-default-capid = <0x794 0>;
 		pmic-xo-mode = <0x788 0 0x788 3 0x788 6 0x788 9
 			0xffff 0xffff 0x7a2 8 0x7a2 11>;
 		pmic-xo-en = <0x788 2 0x788 5 0x788 8 0x788 11
@@ -483,6 +486,15 @@
 			0x7b6 7 0xffff 0xffff 0x7b6 1 0x7b6 12>;
 		n-pmic-auxout-bblpm-en = <1>;
 		pmic-auxout-bblpm-en = <0x7b6 0>;
+
+		n-pmic-cofst-fpm = <1>;
+		pmic-cofst-fpm = <0x796 14>;
+		n-pmic-cdac-fpm = <1>;
+		pmic-cdac-fpm = <0x794 0>;
+		n-pmic-core-idac-fpm = <1>;
+		pmic-core-idac-fpm = <0x79a 14>;
+		n-pmic-aac-fpm-swen = <1>;
+		pmic-aac-fpm-swen = <0x79e 14>;
 	};
 
 };

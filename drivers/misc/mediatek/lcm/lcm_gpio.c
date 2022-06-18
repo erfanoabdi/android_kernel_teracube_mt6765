@@ -37,7 +37,7 @@
 #endif
 #ifdef CONFIG_MTK_LEGACY
 #include <mach/mt_gpio.h>
-#include <cust_gpio_usage.h>
+//#include <cust_gpio_usage.h>
 #include <cust_i2c.h>
 #else
 #include <mt-plat/mt_gpio.h>
@@ -322,5 +322,360 @@ module_exit(_lcm_gpio_exit);
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("MediaTek LCM GPIO driver");
 MODULE_AUTHOR("Joey Pan<joey.pan@mediatek.com>");
+#endif
+
+#else  //added by xen for LCD_ID control 20171106
+#ifndef BUILD_LK
+#include <linux/string.h>
+#include <linux/wait.h>
+#include <linux/platform_device.h>
+#include <linux/gpio.h>
+#include <linux/pinctrl/consumer.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
+#include <linux/of_device.h>
+#include <linux/of_gpio.h>
+#include <linux/of_irq.h>
+#include <linux/module.h>
+
+#ifdef CONFIG_MTK_LEGACY
+#include <mach/mt_pm_ldo.h>	/* hwPowerOn */
+#include <mt-plat/upmu_common.h>
+#else
+#include <mt-plat/upmu_common.h>
+#endif
+
+#ifdef CONFIG_MTK_LEGACY
+#include <mach/mt_gpio.h>
+//#include <cust_gpio_usage.h>
+#include <cust_i2c.h>
+#else
+//#include <mt-plat/mtk_gpio.h> //xjl 20180531
+#endif
+
+#include "lcm_define.h"
+#include "lcm_drv.h"
+//#include "lcm_gpio.h"
+
+#define YK_LCM_5V_IC_SUPPORT
+#define LCM_GPIO_DEVICE	"lcd_id_gpio"
+static int lcm_id_high = 0xFF;
+static int gpio_lcd_id;
+
+
+int gpio_charge_en;
+#if defined(YK_LCM_5V_IC_SUPPORT)
+int gpio_lcm_enp;
+int gpio_lcm_enn;
+int gpio_tp_reset;
+#endif
+
+int get_lcd_id_state(void)
+{
+	int input_value = 0;
+	int ret = 0;
+
+	if(0xFF != lcm_id_high) 
+	{
+	    return lcm_id_high;
+	}
+
+	ret = gpio_request(gpio_lcd_id, "lcd_id");
+	if (ret<0){
+	   pr_debug("lcd-id gpio_request failed!\n");
+	   return -ENODEV;
+	}
+
+	ret = gpio_direction_input(gpio_lcd_id);
+	if (ret<0){
+	   pr_debug("lcd-id gpio_direction_input failed!\n");
+	   return -ENODEV;
+	}
+
+	input_value = gpio_get_value(gpio_lcd_id);
+	gpio_free(gpio_lcd_id);
+
+	lcm_id_high = input_value;  //save lcd_id state
+
+        return input_value;
+}
+
+
+
+void set_gpio_charge_en(int enable)
+{
+	int input_value = 0;
+
+	gpio_set_value(gpio_charge_en, enable);
+	input_value = gpio_get_value(gpio_charge_en);
+	pr_debug("get gpio_charge_en = %d\n", input_value);
+}
+EXPORT_SYMBOL(set_gpio_charge_en);
+
+#if defined(YK_LCM_5V_IC_SUPPORT)
+int set_gpio_lcm_enp(int enable)
+{
+	int input_value = 0;
+	
+	if(enable)
+		enable=1;
+	
+	gpio_set_value(gpio_lcm_enp, enable);
+	input_value = gpio_get_value(gpio_lcm_enp);
+	pr_debug("get gpio_lcm_enp = %d\n", input_value);
+	return 0;
+}
+EXPORT_SYMBOL(set_gpio_lcm_enp);
+
+int set_gpio_lcm_enn(int enable)
+{
+	int input_value = 0;
+	
+	if(enable)
+		enable=1;
+	gpio_set_value(gpio_lcm_enn, enable);
+	input_value = gpio_get_value(gpio_lcm_enn);
+	pr_debug("get gpio_lcm_enn = %d\n", input_value);
+	return 0;
+}
+EXPORT_SYMBOL(set_gpio_lcm_enn);
+
+void set_gpio_tp_reset(int enable)
+{
+	int input_value = 0;
+
+	gpio_set_value(gpio_tp_reset, enable);
+	input_value = gpio_get_value(gpio_tp_reset);
+	pr_debug("get gpio_tp_reset = %d\n", input_value);
+}
+EXPORT_SYMBOL(set_gpio_tp_reset);
+
+int set_gpio_lcm_enp_enn(int enable)
+{
+	int input_value = 0;
+	
+	if(enable)
+		enable=1;
+	
+	gpio_set_value(gpio_lcm_enp, enable);
+	input_value = gpio_get_value(gpio_lcm_enp);
+	pr_debug("get gpio_lcm_enp = %d\n", input_value);
+	gpio_set_value(gpio_lcm_enn, enable);
+	input_value = gpio_get_value(gpio_lcm_enn);
+	pr_debug("get gpio_lcm_enn = %d\n", input_value);
+	return 0;
+}
+EXPORT_SYMBOL(set_gpio_lcm_enp_enn);
+
+#include <linux/delay.h>
+int set_gpio_lcm_enn_enp(int enable)
+{
+	int input_value = 0;
+	
+	if(enable)
+		enable=1;
+	gpio_set_value(gpio_lcm_enn, enable);
+	input_value = gpio_get_value(gpio_lcm_enn);
+	pr_debug("get gpio_lcm_enn = %d\n", input_value);
+	mdelay(2);	
+	gpio_set_value(gpio_lcm_enp, enable);
+	input_value = gpio_get_value(gpio_lcm_enp);
+	pr_debug("get gpio_lcm_enp = %d\n", input_value);
+
+	return 0;
+}
+EXPORT_SYMBOL(set_gpio_lcm_enn_enp);
+#endif
+
+static int _lcm_gpio_probe(struct platform_device *pdev)
+{
+	int ret = 0;
+
+	pr_debug("[LCM][GPIO] enter %s, %d\n", __func__, __LINE__);
+	gpio_lcd_id = of_get_named_gpio(pdev->dev.of_node, "gpio_lcd_id", 0);
+	gpio_charge_en = of_get_named_gpio(pdev->dev.of_node, "gpio_charge_en", 0);
+	pr_debug("[LCM][GPIO] _lcm_gpio_get_info end!gpio_lcd_id=%d\n", gpio_lcd_id);
+	pr_debug("[LCM][GPIO] _lcm_gpio_get_info end!gpio_charge_en=%d\n", gpio_charge_en);
+#if defined(YK_LCM_5V_IC_SUPPORT)
+	gpio_lcm_enp = of_get_named_gpio(pdev->dev.of_node, "gpio_lcm_enp", 0);
+	gpio_lcm_enn = of_get_named_gpio(pdev->dev.of_node, "gpio_lcm_enn", 0);
+	gpio_tp_reset = of_get_named_gpio(pdev->dev.of_node, "gpio_tp_reset", 0);
+	ret = gpio_request(gpio_lcm_enp, "gpio_lcm_enp");
+	if (ret<0){
+	   pr_debug("gpio_lcm_enp gpio_request failed!\n");
+	   return -ENODEV;
+	}
+	gpio_direction_output(gpio_lcm_enp, 1);
+	gpio_set_value(gpio_lcm_enp, 1);
+
+	ret = gpio_request(gpio_lcm_enn, "gpio_lcm_enn");
+	if (ret<0){
+	   pr_debug("gpio_lcm_enn gpio_request failed!\n");
+	   return -ENODEV;
+	}
+	gpio_direction_output(gpio_lcm_enn, 1);
+	gpio_set_value(gpio_lcm_enn, 1);
+	
+	ret = gpio_request(gpio_tp_reset, "gpio_tp_reset");
+	if (ret<0){
+	   pr_debug("gpio_tp_reset gpio_request failed!\n");
+	   return -ENODEV;
+	}
+	gpio_direction_output(gpio_tp_reset, 1);
+	gpio_set_value(gpio_tp_reset, 0);	
+#endif
+
+//gpio_charge_en
+	ret = gpio_request(gpio_charge_en, "gpio_charge_en");
+	if (ret<0){
+	   pr_debug("gpio_charge_en gpio_request failed!\n");
+	   return -ENODEV;
+	}
+	gpio_direction_output(gpio_charge_en, 1);
+	gpio_set_value(gpio_charge_en, 0);
+    
+	return 0;
+}
+
+static int _lcm_gpio_remove(struct platform_device *pdev)
+{
+
+	return 0;
+}
+
+#ifdef CONFIG_OF
+static const struct of_device_id _lcm_gpio_of_ids[] = {
+	{.compatible = "mediatek,lcd_id_gpio",},
+	{},
+};
+MODULE_DEVICE_TABLE(of, _lcm_gpio_of_ids);
+#endif
+
+static struct platform_driver _lcm_gpio_driver = {
+	.driver = {
+		.name = LCM_GPIO_DEVICE,
+		.owner	= THIS_MODULE,
+		.of_match_table = of_match_ptr(_lcm_gpio_of_ids),
+	},
+	.probe = _lcm_gpio_probe,
+	.remove = _lcm_gpio_remove,
+};
+module_platform_driver(_lcm_gpio_driver);
+
+static int __init _lcm_gpio_init(void)
+{
+	pr_debug("MediaTek LCM GPIO driver init\n");
+	if (platform_driver_register(&_lcm_gpio_driver) != 0) {
+		pr_err("unable to register LCM GPIO driver.\n");
+		return -1;
+	}
+	return 0;
+}
+
+
+/* should never be called */
+static void __exit _lcm_gpio_exit(void)
+{
+	pr_debug("MediaTek LCM GPIO driver exit\n");
+	platform_driver_unregister(&_lcm_gpio_driver);
+}
+
+module_init(_lcm_gpio_init);
+module_exit(_lcm_gpio_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("MediaTek LCM GPIO driver");
+MODULE_AUTHOR("Joey Pan<joey.pan@mediatek.com>");
+
+#else  //#ifndef BUILD_LK
+#include "lcm_drv.h"
+#include <platform/mt_gpio.h>
+//#include "cust_gpio_usage.h"
+
+#define YK_LCM_5V_IC_SUPPORT
+#if 1//defined(YK185_CONFIG)
+#define GPIO_LCM_ID_PIN    (3|0x80000000)
+#else
+#define GPIO_LCM_ID_PIN    (9|0x80000000)  //for yk736
+#endif
+
+#if defined(YK_LCM_5V_IC_SUPPORT)
+#define GPIO_LCM_ENP_PIN    (150|0x80000000)
+#define GPIO_LCM_ENN_PIN    (153|0x80000000)
+#define GPIO_TP_RESET_PIN   (174|0x80000000)
+#endif
+
+static int lcm_id_high = 0xFF;
+int get_lcd_id_state(void)
+{
+    unsigned char lcd_id = 0;
+    //Solve Coverity scan warning : check return value
+    unsigned int ret = 0;
+    //only recognise once
+    if(0xFF != lcm_id_high) 
+    {
+        return lcm_id_high;
+    }
+    //Solve Coverity scan warning : check return value
+    ret = mt_set_gpio_mode(GPIO_LCM_ID_PIN, GPIO_MODE_GPIO);
+
+    ret = mt_set_gpio_dir(GPIO_LCM_ID_PIN, GPIO_DIR_IN);
+   
+    lcd_id = mt_get_gpio_in(GPIO_LCM_ID_PIN);
+
+    //if (lcd_id == 1)
+    //{
+    //	ret = mt_set_gpio_pull_select(GPIO_LCM_ID_PIN, GPIO_PULL_UP); 
+    //}
+    //else if (lcd_id == 0)
+    //{
+    //	ret = mt_set_gpio_pull_select(GPIO_LCM_ID_PIN, GPIO_PULL_DOWN);
+    //}
+    //else
+    //{
+    //	ret = mt_set_gpio_pull_select(GPIO_LCM_ID_PIN, GPIO_PULL_DISABLE);
+    //}
+
+    lcm_id_high = lcd_id;
+    return lcd_id;
+}
+
+#if defined(YK_LCM_5V_IC_SUPPORT)
+int set_gpio_lcm_enp(int enable)
+{	
+	if(enable)
+		enable=1;
+	 LCM_LOGI("KERNEL-LCM: %s : enable= %d\n", __func__,enable);
+	
+    mt_set_gpio_mode(GPIO_LCM_ENP_PIN, GPIO_MODE_GPIO);
+    mt_set_gpio_dir(GPIO_LCM_ENP_PIN, GPIO_DIR_OUT);
+	mt_set_gpio_out(GPIO_LCM_ENP_PIN, enable);
+	return 0;
+}
+EXPORT_SYMBOL(set_gpio_lcm_enp);
+
+int set_gpio_lcm_enn(int enable)
+{	
+	if(enable)
+		enable=1;
+	 LCM_LOGI("KERNEL-LCM: %s : enable= %d\n", __func__,enable);
+    mt_set_gpio_mode(GPIO_LCM_ENN_PIN, GPIO_MODE_GPIO);
+    mt_set_gpio_dir(GPIO_LCM_ENN_PIN, GPIO_DIR_OUT);
+	mt_set_gpio_out(GPIO_LCM_ENN_PIN, enable);
+	return 0;
+}
+EXPORT_SYMBOL(set_gpio_lcm_enn);
+
+
+void set_gpio_tp_reset(int enable)
+{
+	LCM_LOGI("KERNEL-LCM: %s : enable= %d\n", __func__,enable);
+    mt_set_gpio_mode(GPIO_TP_RESET_PIN, GPIO_MODE_GPIO);
+    mt_set_gpio_dir(GPIO_TP_RESET_PIN, GPIO_DIR_OUT);
+	mt_set_gpio_out(GPIO_TP_RESET_PIN, enable);
+}
+EXPORT_SYMBOL(set_gpio_tp_reset);
+#endif
+
 #endif
 #endif

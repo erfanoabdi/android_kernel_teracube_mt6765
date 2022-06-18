@@ -235,6 +235,8 @@ static struct ufs_dev_fix ufs_fixups[] = {
 		UFS_DEVICE_QUIRK_HOST_VS_DEBUGSAVECONFIGTIME),
 	UFS_FIX(UFS_VENDOR_MICRON, UFS_ANY_MODEL,
 		UFS_DEVICE_QUIRK_DELAY_AFTER_LPM),
+	UFS_FIX(UFS_ANY_VENDOR, UFS_ANY_MODEL,
+		UFS_DEVICE_QUIRK_VCC_OFF_DELAY),
 
 	END_FIX
 };
@@ -8405,6 +8407,13 @@ disable_clks:
 
 	/* Put the host controller in low power mode if possible */
 	ufshcd_hba_vreg_set_lpm(hba);
+
+	/*
+	 * Some device need VCC off delay and host can provide this delay
+	 */
+	if (hba->dev_quirks & UFS_DEVICE_QUIRK_VCC_OFF_DELAY)
+		mdelay(5);
+
 	goto out;
 
 set_link_active:

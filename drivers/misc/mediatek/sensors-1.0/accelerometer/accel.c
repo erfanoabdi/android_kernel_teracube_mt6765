@@ -9,6 +9,15 @@
 #include "sensor_performance.h"
 #include <linux/vmalloc.h>
 
+// light start
+#include <linux/seq_file.h>
+#include <linux/proc_fs.h>
+
+#define PROC_ACCEL_INFO "driver/gsensor_info"
+#define accel_info_size 128
+char mtk_accel_name[accel_info_size] = {0};
+// light end
+
 struct acc_context *acc_context_obj /* = NULL*/;
 
 static struct acc_init_info *gsensor_init_list[MAX_CHOOSE_G_NUM] = {0};
@@ -538,6 +547,9 @@ static int acc_real_driver_init(void)
 			if (err == 0) {
 				pr_debug(" acc real driver %s probe ok\n",
 					gsensor_init_list[i]->name);
+// light start
+				snprintf(mtk_accel_name,sizeof(mtk_accel_name),"%s",gsensor_init_list[i]->name);
+// light end
 				break;
 			}
 		}
@@ -791,6 +803,26 @@ int acc_flush_report(void)
 	err = sensor_input_event(acc_context_obj->mdev.minor, &event);
 	return err;
 }
+
+// light start
+static int subsys_accel_info_read(struct seq_file *m, void *v)
+{
+   seq_printf(m, "%s\n",mtk_accel_name);
+   return 0;
+};
+
+static int proc_accel_info_open(struct inode *inode, struct file *file)
+{
+    return single_open(file, subsys_accel_info_read, NULL);
+};
+
+static  struct file_operations ftp_proc_fops1 = {
+    .owner = THIS_MODULE,
+    .open  = proc_accel_info_open,
+    .read  = seq_read,
+};
+// light end
+
 static int acc_probe(void)
 {
 
@@ -804,6 +836,10 @@ static int acc_probe(void)
 		pr_err("unable to allocate devobj!\n");
 		goto exit_alloc_data_failed;
 	}
+// light start
+       memset(mtk_accel_name,0,accel_info_size);
+       proc_create(PROC_ACCEL_INFO, 0, NULL, &ftp_proc_fops1);
+// light end
 	/* init real acceleration driver */
 	err = acc_real_driver_init();
 	if (err) {

@@ -40,4 +40,4 @@ subdir-ccflags-y += \
 	-I$(MTK_CUSTOM_PATH)/pmic/include \
 	-I$(MTK_CUSTOM_PATH)/pmic \
 	-I$(MTK_CUSTOM_PATH)/power_throttling
-
+obj-y += flashlights-const-gpio.o

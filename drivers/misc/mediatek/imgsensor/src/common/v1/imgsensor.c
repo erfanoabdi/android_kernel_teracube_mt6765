@@ -434,6 +434,12 @@ imgsensor_sensor_close(struct IMGSENSOR_SENSOR *psensor)
 	return ret ? -EIO : ret;
 }
 
+//add by ybx for camera info
+char mtk_main_cam_name[50] = {0};
+char mtk_sub_cam_name[50] = {0};
+char mtk_main2_cam_name[50] = {0};
+//add end
+
 /************************************************************************
  * imgsensor_check_is_alive
  ************************************************************************/
@@ -463,6 +469,34 @@ static inline int imgsensor_check_is_alive(struct IMGSENSOR_SENSOR *psensor)
 		err = ERROR_SENSOR_CONNECT_FAIL;
 	} else {
 		PK_DBG(" Sensor found ID = 0x%x\n", sensorID);
+		// add by ybx for camera info
+		#if 1 
+		if (psensor->inst.sensor_idx == IMGSENSOR_SENSOR_IDX_MAIN)
+		{
+			snprintf(mtk_main_cam_name,sizeof(mtk_main_cam_name),"%s",psensor_inst->psensor_name); 
+		}
+		else if (psensor->inst.sensor_idx == IMGSENSOR_SENSOR_IDX_SUB)
+		{
+			snprintf(mtk_sub_cam_name,sizeof(mtk_sub_cam_name),"%s",psensor_inst->psensor_name); 
+		}
+		else if (psensor->inst.sensor_idx == IMGSENSOR_SENSOR_IDX_MAIN2)
+		{
+			snprintf(mtk_main2_cam_name,sizeof(mtk_main2_cam_name),"%s",psensor_inst->psensor_name); 
+		}
+		#endif
+		//add end
+// light start
+#if defined(MACRO_CAM_DEV_NODE)
+		if (psensor->inst.sensor_idx == IMGSENSOR_SENSOR_IDX_MAIN2) {
+		    snprintf(macro_cam, macro_cam_size, "%s", psensor_inst->psensor_name);
+		}
+#endif
+#if defined(WIDE_ANGLE_CAM_DEV)
+		if (psensor->inst.sensor_idx == IMGSENSOR_SENSOR_IDX_MAIN3) {
+		    snprintf(wide_angle_cam, wide_angle_cam_size, "%s", psensor_inst->psensor_name);
+		}
+#endif
+// light end
 		err = ERROR_NONE;
 	}
 

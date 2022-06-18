@@ -23,6 +23,8 @@
 #include <linux/of_irq.h>
 #include <linux/of_gpio.h>
 #include <linux/of_address.h>
+#include <linux/arm-smccc.h>
+#include <linux/soc/mediatek/mtk_sip_svc.h>
 #include "ccci_config.h"
 #include "ccci_common_config.h"
 
@@ -39,6 +41,19 @@
 #include "ccci_modem.h"
 #include "port_rpc.h"
 #define MAX_QUEUE_LENGTH 16
+#define MTK_RNG_MAGIC 0x74726e67
+
+static size_t mt_secure_call(size_t function_id,
+		size_t arg0, size_t arg1, size_t arg2,
+		size_t arg3, size_t r1, size_t r2, size_t r3)
+{
+	struct arm_smccc_res res;
+
+	arm_smccc_smc(function_id, arg0, arg1,
+			arg2, arg3, r1, r2, r3, &res);
+
+	return res.a0;
+}
 
 static struct gpio_item gpio_mapping_table[] = {
 	{"GPIO_FDD_Band_Support_Detection_1",
@@ -1122,6 +1137,33 @@ static void ccci_rpc_work_helper(struct port_t *port, struct rpc_pkt *pkt,
 			memset(output, 0xF,
 				sizeof(struct ccci_rpc_md_dtsi_output));
 			get_md_dtsi_val(input, output);
+			break;
+		}
+	case IPC_RPC_TRNG:
+		{
+			unsigned int trng;
+
+			if (pkt_num != 1) {
+				CCCI_ERROR_LOG(md_id, RPC,
+				"invalid parameter for [0x%X]: pkt_num=%d!\n",
+					     p_rpc_buf->op_id, pkt_num);
+				tmp_data[0] = FS_PARAM_ERROR;
+				pkt_num = 0;
+				pkt[pkt_num].len = sizeof(unsigned int);
+				pkt[pkt_num++].buf = (void *)&tmp_data[0];
+				pkt[pkt_num].len = sizeof(unsigned int);
+				pkt[pkt_num++].buf = (void *)&tmp_data[0];
+				break;
+			}
+			trng = mt_secure_call(MTK_SIP_KERNEL_GET_RND,
+					MTK_RNG_MAGIC, 0, 0, 0, 0, 0, 0);
+			pkt_num = 0;
+			tmp_data[0] = 0;
+			tmp_data[1] = trng;
+			pkt[pkt_num].len = sizeof(unsigned int);
+			pkt[pkt_num++].buf = (void *)&tmp_data[0];
+			pkt[pkt_num].len = sizeof(unsigned int);
+			pkt[pkt_num++].buf = (void *)&tmp_data[1];
 			break;
 		}
 	case IPC_RPC_IT_OP:

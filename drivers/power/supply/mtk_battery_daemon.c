@@ -1827,7 +1827,7 @@ static ssize_t FG_Battery_CurrentConsumption_show(
 {
 	int ret_value = 8888;
 
-	ret_value = gauge_get_int_property(GAUGE_PROP_BATTERY_CURRENT) * 100;
+	ret_value = gauge_get_int_property(GAUGE_PROP_BATTERY_CURRENT);// * 100;  //qyl modify show current
 	bm_err("%s[EM] FG_Battery_CurrentConsumption : %d .1mA\n", __func__,
 		ret_value);
 
@@ -3698,18 +3698,19 @@ unsigned int TempConverBattThermistor(struct mtk_battery *gm, int temp)
 	unsigned int TBatt_R_Value = 0xffff;
 	struct fuelgauge_temperature *ptable;
 
+     int Temp_size =24;
 	ptable = gm->tmp_table;
 
 
-	if (temp >= ptable[20].BatteryTemp) {
-		TBatt_R_Value = ptable[20].TemperatureR;
+	if (temp >= ptable[Temp_size-1].BatteryTemp) {
+		TBatt_R_Value = ptable[Temp_size-1].TemperatureR;
 	} else if (temp <= ptable[0].BatteryTemp) {
 		TBatt_R_Value = ptable[0].TemperatureR;
 	} else {
 		RES1 = ptable[0].TemperatureR;
 		TMP1 = ptable[0].BatteryTemp;
 
-		for (i = 0; i <= 20; i++) {
+		for (i = 0; i <= (Temp_size-1); i++) { 
 			if (temp <= ptable[i].BatteryTemp) {
 				RES2 = ptable[i].TemperatureR;
 				TMP2 = ptable[i].BatteryTemp;

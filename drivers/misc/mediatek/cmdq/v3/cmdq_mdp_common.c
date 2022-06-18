@@ -1625,7 +1625,8 @@ s32 cmdq_mdp_wait(struct cmdqRecStruct *handle,
 	u32 i;
 	u64 exec_cost;
 
-	CMDQ_TRACE_FORCE_BEGIN("%s\n", __func__);
+	CMDQ_TRACE_FORCE_BEGIN("%s %d %llx\n",
+		__func__, handle->thread, handle->engineFlag);
 
 	/* we have to wait handle has valid thread first */
 	if (handle->thread == CMDQ_INVALID_THREAD) {

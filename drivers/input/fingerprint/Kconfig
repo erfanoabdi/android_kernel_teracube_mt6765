@@ -4,6 +4,12 @@
 menu "Fingerprint support"
 	depends on INPUT
 
+config FPC_FINGERPRINT
+	bool "FPC Fingerprint"
+	default n
+	help
+	  FPC fingerprint FPC's 102x/104x device.
+	  
 config MTK_FINGERPRINT_SUPPORT
 	bool "Mediatek Fingerprint"
 	default n

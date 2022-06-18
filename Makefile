@@ -433,6 +433,22 @@ KBUILD_LDFLAGS :=
 GCC_PLUGINS_CFLAGS :=
 CLANG_FLAGS :=
 
+# light start
+include $(srctree)/ProjectConfig.mk
+ifeq ($(strip $(MACRO_CAM_DEV_NODE)), yes)
+KBUILD_CPPFLAGS += -DMACRO_CAM_DEV_NODE
+endif
+ifeq ($(strip $(WIDE_ANGLE_CAM_DEV)), yes)
+KBUILD_CPPFLAGS += -DWIDE_ANGLE_CAM_DEV
+endif
+ifeq ($(strip $(TOUCHPANEL_GESTURE)), yes)
+KBUILD_CPPFLAGS += -DTOUCHPANEL_GESTURE
+endif
+ifeq ($(strip $(LED_SOFTWARE_BLINK)), yes)
+KBUILD_CPPFLAGS += -DLED_SOFTWARE_BLINK
+endif
+# light end
+
 export ARCH SRCARCH CONFIG_SHELL HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP KBUILD_HOSTLDFLAGS KBUILD_HOSTLDLIBS
 export MAKE LEX YACC AWK GENKSYMS INSTALLKERNEL PERL PYTHON PYTHON2 PYTHON3 UTS_MACHINE
@@ -710,6 +726,7 @@ stackp-flags-$(CONFIG_STACKPROTECTOR_STRONG)      := -fstack-protector-strong
 
 KBUILD_CFLAGS += $(stackp-flags-y)
 
+KBUILD_CPPFLAGS += -DUSE_OLD_SENSOR_DTS_ARCH
 ifeq ($(cc-name),clang)
 KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
 KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)

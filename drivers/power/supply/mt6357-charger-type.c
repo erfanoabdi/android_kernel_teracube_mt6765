@@ -561,7 +561,12 @@ void do_charger_detect(struct mtk_charger_type *info, bool en)
 	}
 
 	pr_notice("%s type:%d usb_type:%d\n", __func__, prop2.intval, prop3.intval);
-
+     if(en &&(prop3.intval ==1 || prop3.intval ==3))
+       {
+               mt_usb_connect();
+       }else{
+               mt_usb_disconnect();
+       }
 	power_supply_changed(info->psy);
 }
 
