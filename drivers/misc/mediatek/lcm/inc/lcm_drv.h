@@ -739,6 +739,9 @@ struct LCM_DSI_PARAMS {
 	unsigned int PHY_SEL1;
 	unsigned int PHY_SEL2;
 	unsigned int PHY_SEL3;
+// light start
+        unsigned char *g_StrLcmInfo;
+// lignt end
 
 	unsigned int dynamic_switch_mipi;
 	unsigned int vertical_sync_active_dyn;
