@@ -775,7 +775,7 @@ static void SCP_sensorHub_init_sensor_state(void)
 	mSensorState[SENSOR_TYPE_GYROSCOPE_UNCALIBRATED].timestamp_filter =
 		true;
 #endif
-
+#if 0 //20210830 begin
 	mSensorState[SENSOR_TYPE_MAGNETIC_FIELD].sensorType =
 		SENSOR_TYPE_MAGNETIC_FIELD;
 	mSensorState[SENSOR_TYPE_MAGNETIC_FIELD].timestamp_filter = true;
@@ -795,7 +795,7 @@ static void SCP_sensorHub_init_sensor_state(void)
 
 	mSensorState[SENSOR_TYPE_PROXIMITY].sensorType = SENSOR_TYPE_PROXIMITY;
 	mSensorState[SENSOR_TYPE_PROXIMITY].timestamp_filter = false;
-
+#endif //20210830 end
 	mSensorState[SENSOR_TYPE_PRESSURE].sensorType = SENSOR_TYPE_PRESSURE;
 	mSensorState[SENSOR_TYPE_PRESSURE].timestamp_filter = false;
 

@@ -47,6 +47,13 @@ struct alsps_hw {
 	bool is_batch_supported_als;
 };
 
+
+#ifndef USE_OLD_SENSOR_DTS_ARCH
+//int get_mag_dts_func(struct device_node *node, struct mag_hw *hw)
 int get_alsps_dts_func(struct device_node *node, struct alsps_hw *hw);
+#else
+//int get_mag_dts_func(const char *name, struct mag_hw *hw)
+int get_alsps_dts_func(const char *name, struct alsps_hw *hw);
+#endif
 
 #endif
