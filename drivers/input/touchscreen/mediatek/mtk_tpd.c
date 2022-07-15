@@ -13,10 +13,10 @@
 #ifdef CONFIG_MTK_MT6306_GPIO_SUPPORT
 #include <mtk_6306_gpio.h>
 #endif
-
-#ifdef CONFIG_COMPAT
+#include <linux/of_gpio.h>
+//#ifdef CONFIG_COMPAT
 #include <linux/compat.h>
-#endif
+//#endif
 
 #if defined(CONFIG_MTK_S3320) || defined(CONFIG_MTK_S3320_50) \
 	|| defined(CONFIG_MTK_S3320_47) || defined(CONFIG_MTK_MIT200) \
@@ -35,6 +35,11 @@
 #define COMPAT_TPD_GET_FILTER_PARA _IOWR(TOUCH_IOC_MAGIC, \
 						2, struct tpd_filter_t)
 #endif
+//Start zxs 20150522
+#define PROC_TP_INFO "driver/tp_info"
+#define tp_info_size 128
+char mtk_tp_name[tp_info_size] = {0};
+//end
 struct tpd_filter_t tpd_filter;
 struct tpd_dts_info tpd_dts_data;
 struct pinctrl *pinctrl1;
@@ -152,7 +157,7 @@ void tpd_gpio_as_int(int pin)
 void tpd_gpio_output(int pin, int level)
 {
 	mutex_lock(&tpd_set_gpio_mutex);
-	TPD_DEBUG("%s pin = %d, level = %d\n", __func__, pin, level);
+	TPD_DEBUG("tpd_gpio_output pin = %d, level = %d\n", pin, level);
 	if (pin == 1) {
 		if (level)
 			pinctrl_select_state(pinctrl1, eint_output1);
@@ -186,13 +191,11 @@ int tpd_get_gpio_info(struct platform_device *pdev)
 		dev_info(&pdev->dev, "fwq Cannot find pinctrl1!\n");
 		return ret;
 	}
-#ifndef CONFIG_TOUCHSCREEN_HIMAX_CHIPSET_8789P1_8185P3
 	pins_default = pinctrl_lookup_state(pinctrl1, "default");
 	if (IS_ERR(pins_default)) {
 		ret = PTR_ERR(pins_default);
 		TPD_DMESG("Cannot find pinctrl default %d!\n", ret);
 	}
-#endif
 	eint_as_int = pinctrl_lookup_state(pinctrl1, "state_eint_as_int");
 	if (IS_ERR(eint_as_int)) {
 		ret = PTR_ERR(eint_as_int);
@@ -410,7 +413,7 @@ static struct notifier_block tpd_fb_notifier;
 /* use fb_notifier */
 static void touch_resume_workqueue_callback(struct work_struct *work)
 {
-	TPD_DEBUG("GTP %s\n", __func__);
+	TPD_DEBUG("GTP touch_resume_workqueue_callback\n");
 	g_tpd_drv->resume(NULL);
 	tpd_suspend_flag = 0;
 }
@@ -422,7 +425,7 @@ static int tpd_fb_notifier_callback(
 	int blank;
 	int err = 0;
 
-	TPD_DEBUG("%s\n", __func__);
+	TPD_DEBUG("tpd_fb_notifier_callback\n");
 
 	evdata = data;
 	/* If we aren't interested in this event, skip it immediately ... */
@@ -445,6 +448,7 @@ static int tpd_fb_notifier_callback(
 		break;
 	case FB_BLANK_POWERDOWN:
 		TPD_DMESG("LCD OFF Notify\n");
+		#if !defined(YK682_CUSTOMER_CAIFU_WS210A_FHDPLUS)
 		if (g_tpd_drv && !tpd_suspend_flag) {
 			err = cancel_work_sync(&touch_resume_work);
 			if (!err)
@@ -452,12 +456,28 @@ static int tpd_fb_notifier_callback(
 			g_tpd_drv->suspend(NULL);
 		}
 		tpd_suspend_flag = 1;
+		#endif
 		break;
 	default:
 		break;
 	}
 	return 0;
 }
+
+#if defined(YK682_CUSTOMER_CAIFU_WS210A_FHDPLUS)
+void tpd_suspend_before_lcm(void)
+{
+		int err = 0;
+		if (g_tpd_drv && !tpd_suspend_flag) {
+			err = cancel_work_sync(&touch_resume_work);
+			if (!err)
+				TPD_DMESG("cancel resume_workqueue failed\n");
+			g_tpd_drv->suspend(NULL);
+		}
+		tpd_suspend_flag = 1;
+}
+#endif
+
 /* Add driver: if find TPD_TYPE_CAPACITIVE driver successfully, loading it */
 int tpd_driver_add(struct tpd_driver_t *tpd_drv)
 {
@@ -530,6 +550,26 @@ static void tpd_create_attributes(struct device *dev, struct tpd_attrs *attrs)
 	}
 }
 
+/* Touchpanel information */ //Start zxs 20150522
+static int subsys_tp_info_read(struct seq_file *m, void *v)
+{
+   //PK_ERR("subsys_tp_info_read %s\n",mtk_tp_name);
+   seq_printf(m, "%s\n",mtk_tp_name);
+   return 0;
+};
+
+static int proc_tp_info_open(struct inode *inode, struct file *file)
+{
+    return single_open(file, subsys_tp_info_read, NULL);
+};
+
+static  struct file_operations ftp_proc_fops1 = {
+    .owner = THIS_MODULE,
+    .open  = proc_tp_info_open,
+    .read  = seq_read,
+};
+//end
+
 /* touch panel probe */
 static int tpd_probe(struct platform_device *pdev)
 {
@@ -543,7 +583,6 @@ static int tpd_probe(struct platform_device *pdev)
 #endif
 
 	TPD_DMESG("enter %s, %d\n", __func__, __LINE__);
-	pr_info("enter %s, %d\n", __func__, __LINE__);
 
 	if (misc_register(&tpd_misc_device))
 		pr_info("mtk_tpd: tpd_misc_device register failed\n");
@@ -561,6 +600,12 @@ static int tpd_probe(struct platform_device *pdev)
 	}
 	/* TPD_RES_X = simple_strtoul(LCM_WIDTH, NULL, 0); */
 	/* TPD_RES_Y = simple_strtoul(LCM_HEIGHT, NULL, 0); */
+
+       /* Touchpanel information */
+//Start zxs 20150522
+       memset(mtk_tp_name,0,tp_info_size);
+       proc_create(PROC_TP_INFO, 0, NULL, &ftp_proc_fops1);
+//end
 
 	#ifdef CONFIG_MTK_LCM_PHYSICAL_ROTATION
 	if (strncmp(CONFIG_MTK_LCM_PHYSICAL_ROTATION, "90", 2) == 0
@@ -603,10 +648,10 @@ static int tpd_probe(struct platform_device *pdev)
 #endif
 	}
 
-	if (2560 == TPD_RES_X)
-		TPD_RES_X = 2048;
-	if (1600 == TPD_RES_Y)
-		TPD_RES_Y = 1536;
+	//if (2560 == TPD_RES_X)
+	//	TPD_RES_X = 2048;
+	//if (1600 == TPD_RES_Y)//cjc del for bst01
+	//	TPD_RES_Y = 1536;
 	pr_debug("mtk_tpd: TPD_RES_X = %lu, TPD_RES_Y = %lu\n",
 		TPD_RES_X, TPD_RES_Y);
 
@@ -641,6 +686,7 @@ static int tpd_probe(struct platform_device *pdev)
 			if (tpd_load_status == 1) {
 				TPD_DMESG("%s, tpd_driver_name=%s\n", __func__,
 					  tpd_driver_list[i].tpd_device_name);
+				snprintf(mtk_tp_name,sizeof(mtk_tp_name),"%s",tpd_driver_list[i].tpd_device_name); //zxs 20150522
 				g_tpd_drv = &tpd_driver_list[i];
 				break;
 			}

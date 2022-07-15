@@ -179,6 +179,11 @@ int LCD_LayerEnable(int id, BOOL enable);
 
 #include "tpd_default.h"
 
+#if defined(TOUCHPANEL_GESTURE) //xen 20170831 by tp gesture controller by MMI
+//#define TP_GESTURE_FLAG_FILE     "tp_gesture"
+extern u8 gesture_open_state;
+#endif
+
 /* switch touch panel into different mode */
 void _tpd_switch_single_mode(void);
 void _tpd_switch_multiple_mode(void);
