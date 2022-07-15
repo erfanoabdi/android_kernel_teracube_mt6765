@@ -399,6 +399,35 @@
 	bc12_sel = <1>;
 };
 
+&i2c1 {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        clock-frequency = <400000>;
+        mediatek,use-open-drain;
+        gsensor_mtk:gsensor@4c {
+                compatible = "mediatek,gsensor";
+                reg = <0x4c>;
+                status = "okay";
+        };
+
+        msensor_mtk:msensor@0c {
+                compatible = "mediatek,msensor";
+                reg = <0x0c>;
+                status = "okay";
+        };
+
+        alsps_mtk:alsps@51 {
+                compatible = "mediatek,alsps";
+                reg = <0x51>;
+                status = "okay";
+        };
+	gyro_mtk:gyro@6b {
+                compatible = "mediatek,gyro";
+                reg = <0x6b>;
+                status = "okay";
+        };
+};
+
 &i2c3 {
 	rt9465@4b {
 		compatible = "richtek,rt9465";
