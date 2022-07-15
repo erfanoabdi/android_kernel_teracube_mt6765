@@ -169,6 +169,7 @@ static enum IMGSENSOR_RETURN imgsensor_hw_power_sequence(
 	return IMGSENSOR_RETURN_SUCCESS;
 }
 
+int m_SensorSel = 0; //added by xen for main/sub sensor difference 20171226
 enum IMGSENSOR_RETURN imgsensor_hw_power(
 	struct IMGSENSOR_HW     *phw,
 	struct IMGSENSOR_SENSOR *psensor,
@@ -191,14 +192,24 @@ enum IMGSENSOR_RETURN imgsensor_hw_power(
 	if (phw->enable_sensor_by_index[(uint32_t)sensor_idx] &&
 	!strstr(phw->enable_sensor_by_index[(uint32_t)sensor_idx], curr_sensor_name))
 		return IMGSENSOR_RETURN_ERROR;
-
-
+		
 	ret = snprintf(str_index, sizeof(str_index), "%d", sensor_idx);
 	if (ret == 0) {
 		pr_info("Error! snprintf allocate 0");
 		ret = IMGSENSOR_RETURN_ERROR;
 		return ret;
 	}
+	
+	//added by xen for camera index selection 20171226
+	if (sensor_idx==IMGSENSOR_SENSOR_IDX_MAIN)
+		m_SensorSel = 0;
+	else if (sensor_idx==IMGSENSOR_SENSOR_IDX_SUB)
+		m_SensorSel = 1;		
+	else if (sensor_idx==IMGSENSOR_SENSOR_IDX_MAIN2)
+		m_SensorSel = 2;
+	else if (sensor_idx==IMGSENSOR_SENSOR_IDX_SUB2)
+		m_SensorSel = 3;
+
 	imgsensor_hw_power_sequence(
 	    phw,
 	    sensor_idx,
