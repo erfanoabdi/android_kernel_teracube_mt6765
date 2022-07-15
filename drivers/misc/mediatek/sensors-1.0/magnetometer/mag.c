@@ -8,6 +8,7 @@
 #include "inc/mag.h"
 #include "sensor_performance.h"
 #include <linux/vmalloc.h>
+#undef CONFIG_NANOHUB
 
 struct mag_context *mag_context_obj /* = NULL*/;
 static struct mag_init_info *msensor_init_list[MAX_CHOOSE_G_NUM] = {0};

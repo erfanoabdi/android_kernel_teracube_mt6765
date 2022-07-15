@@ -6,7 +6,7 @@
 #define pr_fmt(fmt) "[Sensor dts] " fmt
 
 #include <cust_acc.h>
-#include <cust_accelgyro.h>
+//#include <cust_accelgyro.h>
 #include <cust_alsps.h>
 #include <cust_baro.h>
 #include <cust_gyro.h>
@@ -15,7 +15,11 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 
+#ifndef USE_OLD_SENSOR_DTS_ARCH
 int get_accel_dts_func(struct device_node *node, struct acc_hw *hw)
+#else
+int get_accel_dts_func(const char *name, struct acc_hw *hw)
+#endif
 {
 	int i, ret;
 	u32 i2c_num[] = {0};
@@ -25,8 +29,18 @@ int get_accel_dts_func(struct device_node *node, struct acc_hw *hw)
 	u32 power_vol[] = {0};
 	u32 firlen[] = {0};
 	u32 is_batch_supported[] = {0};
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	struct device_node *node = NULL;
+#endif
 
 	pr_debug("Device Tree get accel info!\n");
+
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	if (name == NULL)
+		return -1;
+
+	node = of_find_compatible_node(NULL, NULL, name);
+#endif
 	if (node) {
 		ret = of_property_read_u32_array(node, "i2c_num", i2c_num,
 						 ARRAY_SIZE(i2c_num));
@@ -78,7 +92,11 @@ int get_accel_dts_func(struct device_node *node, struct acc_hw *hw)
 	return 0;
 }
 
+#ifndef USE_OLD_SENSOR_DTS_ARCH
 int get_alsps_dts_func(struct device_node *node, struct alsps_hw *hw)
+#else
+int get_alsps_dts_func(const char *name, struct alsps_hw *hw)
+#endif
 {
 	int i, ret;
 	u32 i2c_num[] = {0};
@@ -93,8 +111,18 @@ int get_alsps_dts_func(struct device_node *node, struct alsps_hw *hw)
 	u32 ps_threshold_low[] = {0};
 	u32 is_batch_supported_ps[] = {0};
 	u32 is_batch_supported_als[] = {0};
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	struct device_node *node = NULL;
+#endif
 
 	pr_debug("Device Tree get alsps info!\n");
+
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	if (name == NULL)
+		return -1;
+
+	node = of_find_compatible_node(NULL, NULL, name);
+#endif
 	if (node) {
 		ret = of_property_read_u32_array(node, "i2c_num", i2c_num,
 						 ARRAY_SIZE(i2c_num));
@@ -179,7 +207,11 @@ int get_alsps_dts_func(struct device_node *node, struct alsps_hw *hw)
 	return 0;
 }
 
+#ifndef USE_OLD_SENSOR_DTS_ARCH
 int get_mag_dts_func(struct device_node *node, struct mag_hw *hw)
+#else
+int get_mag_dts_func(const char *name, struct mag_hw *hw)
+#endif
 {
 	int i, ret;
 	u32 i2c_num[] = {0};
@@ -188,8 +220,18 @@ int get_mag_dts_func(struct device_node *node, struct mag_hw *hw)
 	u32 power_id[] = {0};
 	u32 power_vol[] = {0};
 	u32 is_batch_supported[] = {0};
-
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	struct device_node *node = NULL;
+#endif
 	pr_debug("Device Tree get mag info!\n");
+
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	if (name == NULL)
+		return -1;
+
+	node = of_find_compatible_node(NULL, NULL, name);
+#endif
+
 	if (node) {
 		ret = of_property_read_u32_array(node, "i2c_num", i2c_num,
 						 ARRAY_SIZE(i2c_num));
@@ -235,7 +277,12 @@ int get_mag_dts_func(struct device_node *node, struct mag_hw *hw)
 	return 0;
 }
 
+
+#ifndef USE_OLD_SENSOR_DTS_ARCH
 int get_gyro_dts_func(struct device_node *node, struct gyro_hw *hw)
+#else
+int get_gyro_dts_func(const char *name, struct gyro_hw *hw)
+#endif
 {
 	int i, ret;
 	u32 i2c_num[] = {0};
@@ -245,8 +292,19 @@ int get_gyro_dts_func(struct device_node *node, struct gyro_hw *hw)
 	u32 power_vol[] = {0};
 	u32 firlen[] = {0};
 	u32 is_batch_supported[] = {0};
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	struct device_node *node = NULL;
+#endif
 
 	pr_debug("Device Tree get gyro info!\n");
+
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	if (name == NULL)
+		return -1;
+
+	node = of_find_compatible_node(NULL, NULL, name);
+#endif
+
 	if (node) {
 		ret = of_property_read_u32_array(node, "i2c_num", i2c_num,
 						 ARRAY_SIZE(i2c_num));
@@ -297,7 +355,11 @@ int get_gyro_dts_func(struct device_node *node, struct gyro_hw *hw)
 	return 0;
 }
 
+#ifndef USE_OLD_SENSOR_DTS_ARCH //xjl 20181017
 int get_baro_dts_func(struct device_node *node, struct baro_hw *hw)
+#else
+int get_baro_dts_func(const char *name, struct baro_hw *hw)
+#endif
 {
 	int i, ret;
 	u32 i2c_num[] = {0};
@@ -307,8 +369,18 @@ int get_baro_dts_func(struct device_node *node, struct baro_hw *hw)
 	u32 power_vol[] = {0};
 	u32 firlen[] = {0};
 	u32 is_batch_supported[] = {0};
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	struct device_node *node = NULL;
+#endif
 
 	pr_debug("Device Tree get gyro info!\n");
+
+#ifdef USE_OLD_SENSOR_DTS_ARCH
+	if (name == NULL)
+		return -1;
+
+	node = of_find_compatible_node(NULL, NULL, name);
+#endif
 
 	if (node) {
 		ret = of_property_read_u32_array(node, "i2c_num", i2c_num,
@@ -359,7 +431,7 @@ int get_baro_dts_func(struct device_node *node, struct baro_hw *hw)
 	}
 	return 0;
 }
-
+#if 0
 int get_accelgyro_dts_func(struct device_node *node, struct accelgyro_hw *hw)
 {
 	int ret;
@@ -412,3 +484,4 @@ int get_accelgyro_dts_func(struct device_node *node, struct accelgyro_hw *hw)
 
 	return 0;
 }
+#endif

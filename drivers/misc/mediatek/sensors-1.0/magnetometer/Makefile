@@ -9,3 +9,5 @@ obj-y   +=  mag_factory.o
 obj-$(CONFIG_MTK_MAGHUB) += maghub/
 #obj-$(CONFIG_MTK_AKM09915_NEW) += akm09915/
 #obj-$(CONFIG_MTK_AKM09918) += akm09918/
+
+obj-y   +=  af6133/

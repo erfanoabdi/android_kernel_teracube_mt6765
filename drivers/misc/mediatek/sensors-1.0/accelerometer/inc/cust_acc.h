@@ -26,5 +26,9 @@ struct acc_hw {
 	bool is_batch_supported;
 };
 
+#ifndef USE_OLD_SENSOR_DTS_ARCH
 int get_accel_dts_func(struct device_node *node, struct acc_hw *hw);
+#else
+int get_accel_dts_func(const char *, struct acc_hw*);
+#endif
 #endif
