@@ -56,6 +56,126 @@ static void kpd_memory_setting(void)
 	kpd_init_keymap_state(kpd_keymap_state);
 }
 
+//add by ybx
+extern char mtk_main_cam_name[50];
+static ssize_t cam_main_info_show(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+
+	res = snprintf(buf, PAGE_SIZE, "%s\n", mtk_main_cam_name);
+	return res;
+}
+
+static DRIVER_ATTR(cam_main_info, 0644, cam_main_info_show,NULL);
+
+extern char mtk_main2_cam_name[50];
+static ssize_t cam_main2_info_show(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+
+	res = snprintf(buf, PAGE_SIZE, "%s\n", mtk_main2_cam_name);
+	return res;
+}
+
+static DRIVER_ATTR(cam_main2_info, 0644, cam_main2_info_show,NULL);
+
+extern char mtk_sub_cam_name[50];
+static ssize_t cam_sub_info_show(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+
+	res = snprintf(buf, PAGE_SIZE, "%s\n", mtk_sub_cam_name);
+	return res;
+}
+
+static DRIVER_ATTR(cam_sub_info, 0644, cam_sub_info_show,NULL);
+
+extern char mtk_tp_info[128];
+static ssize_t tp_info_show(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+
+	res = snprintf(buf, PAGE_SIZE, "%s\n", mtk_tp_info);
+	return res;
+}
+
+static DRIVER_ATTR(tp_info, 0644, tp_info_show,NULL);
+
+extern char mtk_tp_version[128];
+static ssize_t tp_version_show(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+
+	res = snprintf(buf, PAGE_SIZE, "%s\n", mtk_tp_version);
+	return res;
+}
+
+static DRIVER_ATTR(tp_version, 0644, tp_version_show,NULL);
+
+extern char mtk_flash_cid[128];
+static ssize_t flash_info_show(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+
+	res = snprintf(buf, PAGE_SIZE, "%s\n", mtk_flash_cid);
+	return res;
+}
+
+static DRIVER_ATTR(flash_info, 0644, flash_info_show,NULL);
+
+#if defined(TOUCHPANEL_GESTURE) //xen 20170831 by tp gesture controller by MMI
+u8 gesture_open_state = 0;
+static ssize_t kpd_store_tp_gesture_state(struct device_driver *ddri, const char *buf, size_t count)
+{
+	if(strncmp("yes",buf,3)==0){
+		gesture_open_state = 1;
+		pr_info("[TP_GESTURE] tp_sysfs_tpgesturet_store on.\n");
+	}
+	else if(strncmp("no",buf,2)==0){
+		gesture_open_state = 0;
+		pr_info("[TP_GESTURE] tp_sysfs_tpgesturet_store off.\n");
+	}
+
+	return count;
+}
+
+static ssize_t kpd_show_tp_gesture_state(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+
+	res = snprintf(buf, PAGE_SIZE, "%d\n", gesture_open_state);
+	return res;
+}
+
+static DRIVER_ATTR(kpd_tp_gesture_state, S_IWUSR | S_IRUGO, kpd_show_tp_gesture_state, kpd_store_tp_gesture_state);
+#endif
+
+extern unsigned int yk_stop_percent;
+static ssize_t kpd_store_stop_charging_percent(struct device_driver *ddri,
+			   const char *buf, size_t count)
+{
+	int ret;
+	ret = kstrtouint(buf, 0, &yk_stop_percent);
+	if (ret) {
+		pr_info("kpd yk_stop_percent: Invalid values\n");
+		return -EINVAL;
+	}
+	
+	return count;
+}
+
+static ssize_t kpd_show_stop_charging_percent(struct device_driver *ddri, char *buf)
+{
+	ssize_t res;
+	
+	res = snprintf(buf, PAGE_SIZE, "%d\n", yk_stop_percent);
+	return res;
+}
+
+static DRIVER_ATTR(stop_charging_percent, 0644, kpd_show_stop_charging_percent,
+			   kpd_store_stop_charging_percent);
+//add end ybx
+
 #if 1
 static ssize_t kpd_call_state_store(struct device_driver *ddri,
 		const char *buf, size_t count)
@@ -97,6 +217,16 @@ static ssize_t kpd_call_state_show(struct device_driver *ddri, char *buf)
 static DRIVER_ATTR_RW(kpd_call_state);
 static struct driver_attribute *kpd_attr_list[] = {
 	&driver_attr_kpd_call_state,
+	&driver_attr_tp_info,
+	&driver_attr_tp_version,
+	&driver_attr_cam_main_info,
+	&driver_attr_cam_main2_info,
+	&driver_attr_cam_sub_info,
+	&driver_attr_flash_info,
+#if defined(TOUCHPANEL_GESTURE) //xen 20170831 by tp gesture controller by MMI
+	&driver_attr_kpd_tp_gesture_state,
+#endif
+	&driver_attr_stop_charging_percent,
 };
 
 
@@ -163,6 +293,21 @@ void kpd_pmic_rstkey_handler(unsigned long pressed)
 	}
 	kpd_pmic_rstkey_hal(pressed);
 }
+
+#if defined (TOUCHPANEL_GESTURE)  // xjl 2014-01-16
+void kpd_touchpanel_gesture_handler(int key_code)
+{
+	//for vibrate soon
+	//upmu_set_rg_vibr_en(1); //xjl 20140526
+	//mdelay(50);
+	//upmu_set_rg_vibr_en(0);
+
+	input_report_key(kpd_input_dev, key_code, 1);
+	input_sync(kpd_input_dev);
+	input_report_key(kpd_input_dev, key_code, 0);
+	input_sync(kpd_input_dev);
+}
+#endif
 
 static void kpd_keymap_handler(unsigned long data)
 {
@@ -407,6 +552,25 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 #endif
 #ifdef CONFIG_MTK_MRDUMP_KEY
 	__set_bit(KEY_RESTART, kpd_input_dev->keybit);
+#endif
+
+#if defined (TOUCHPANEL_GESTURE)  // xjl 2014-01-16
+	__set_bit(KEY_TPGESTURE_UP, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_DOWN, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_LEFT, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_RIGHT, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_DOUBLE, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_C, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_E, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_M, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_O, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_S, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_V, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_W, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_Z, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_ARROWUP, kpd_input_dev->keybit);
+	__set_bit(KEY_TPGESTURE_ARROWRIGHT, kpd_input_dev->keybit);
+	__set_bit(KEY_F4, kpd_input_dev->keybit); //tplink
 #endif
 
 	err = input_register_device(kpd_input_dev);
