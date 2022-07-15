@@ -1238,7 +1238,7 @@
 /* added by xen for BPIBUS control by MMI 20171014 */
 //#include "bpibus_gpio_ctrl.dts"
 #include "mediatek/fpsensor.dtsi"
-#include <yk673v6_lwg62_64/cust.dtsi>
+#include <zirconia/cust.dtsi>
 //#include <cust_mt6765_alsps.dtsi>
 //#include "mediatek/cust_mt6765_camera.dtsi"
 //#include "mediatek/cust_mt6765_touch_1080x1920.dtsi"
