@@ -359,4 +359,15 @@ extern long WV511AAF_Ioctl(struct file *a_pstFile, unsigned int a_u4Command,
 extern int WV511AAF_Release(struct inode *a_pstInode, struct file *a_pstFile);
 extern int WV511AAF_GetFileName(unsigned char *pFileName);
 
+#define FM50AF_SetI2Cclient FM50AF_SetI2Cclient_Main
+#define FM50AF_Ioctl FM50AF_Ioctl_Main
+#define FM50AF_Release FM50AF_Release_Main
+#define FM50AF_GetFileName FM50AF_GetFileName_Main
+extern int FM50AF_SetI2Cclient(struct i2c_client *pstAF_I2Cclient,
+			       spinlock_t *pAF_SpinLock, int *pAF_Opened);
+extern long FM50AF_Ioctl(struct file *a_pstFile, unsigned int a_u4Command,
+			 unsigned long a_u4Param);
+extern int FM50AF_Release(struct inode *a_pstInode, struct file *a_pstFile);
+extern int FM50AF_GetFileName(unsigned char *pFileName);
+
 #endif
