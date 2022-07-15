@@ -794,6 +794,11 @@ static int mmc_compare_ext_csds(struct mmc_card *card, unsigned bus_width)
 	return err;
 }
 
+//add by ybx for flash info
+#define flash_info_size 128
+char mtk_flash_cid[128] = {0};
+//add end
+
 MMC_DEV_ATTR(cid, "%08x%08x%08x%08x\n", card->raw_cid[0], card->raw_cid[1],
 	card->raw_cid[2], card->raw_cid[3]);
 MMC_DEV_ATTR(csd, "%08x%08x%08x%08x\n", card->raw_csd[0], card->raw_csd[1],
@@ -1640,6 +1645,12 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 		card->rca = 1;
 		memcpy(card->raw_cid, cid, sizeof(card->raw_cid));
 	}
+	
+	//add by ybx for flash info
+	memset(mtk_flash_cid,0,flash_info_size);
+	snprintf(mtk_flash_cid,sizeof(mtk_flash_cid),"%08x%08x%08x%08x",card->raw_cid[0], card->raw_cid[1],
+	card->raw_cid[2], card->raw_cid[3]);
+	//add end
 
 	/*
 	 * Call the optional HC's init_card function to handle quirks.
