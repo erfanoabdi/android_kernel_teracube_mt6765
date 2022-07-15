@@ -246,6 +246,8 @@ obj-$(CONFIG_MFD_MT6397)	+= mt6397.o
 obj-$(CONFIG_MFD_MT6397)	+= mt63xx-oc-debug.o
 ifeq ($(CONFIG_DEBUG_FS), y)
 obj-$(CONFIG_MFD_MT6397)	+= mt63xx-debug.o
+else ifneq ($(CONFIG_MTK_ECCCI_DRIVER), y)
+obj-$(CONFIG_MFD_MT6397)	+= mt63xx-debug.o
 endif
 endif
 
@@ -268,6 +270,7 @@ obj-$(CONFIG_RAVE_SP_CORE)	+= rave-sp.o
 obj-$(CONFIG_MFD_ROHM_BD718XX)	+= rohm-bd718x7.o
 
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat
 ifdef CONFIG_MTK_TINYSYS_SSPM_SUPPORT
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm/
 endif
