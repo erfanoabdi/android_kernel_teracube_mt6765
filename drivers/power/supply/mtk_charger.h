@@ -42,7 +42,7 @@ do {								\
 } while (0)
 
 struct mtk_charger;
-#define BATTERY_CV 4350000
+#define BATTERY_CV 4400000
 #define V_CHARGER_MAX 6500000 /* 6.5 V */
 #define V_CHARGER_MIN 4600000 /* 4.6 V */
 
@@ -50,7 +50,7 @@ struct mtk_charger;
 #define USB_CHARGER_CURRENT_UNCONFIGURED	70000 /* 70mA */
 #define USB_CHARGER_CURRENT_CONFIGURED		500000 /* 500mA */
 #define USB_CHARGER_CURRENT			500000 /* 500mA */
-#define AC_CHARGER_CURRENT			2050000
+#define AC_CHARGER_CURRENT			2050000 //2050000
 #define AC_CHARGER_INPUT_CURRENT		3200000
 #define NON_STD_AC_CHARGER_CURRENT		500000
 #define CHARGING_HOST_CHARGER_CURRENT		650000
@@ -63,6 +63,7 @@ struct mtk_charger;
 /* battery warning */
 #define BATTERY_NOTIFY_CASE_0001_VCHARGER
 #define BATTERY_NOTIFY_CASE_0002_VBATTEMP
+#define BAT_LOW_TEMP_PROTECT_ENABLE
 
 /* charging abnormal status */
 #define CHG_VBUS_OV_STATUS	(1 << 0)
@@ -75,9 +76,9 @@ struct mtk_charger;
 
 /* Battery Temperature Protection */
 #define MIN_CHARGE_TEMP  0
-#define MIN_CHARGE_TEMP_PLUS_X_DEGREE	6
-#define MAX_CHARGE_TEMP  50
-#define MAX_CHARGE_TEMP_MINUS_X_DEGREE	47
+#define MIN_CHARGE_TEMP_PLUS_X_DEGREE	5
+#define MAX_CHARGE_TEMP  55
+#define MAX_CHARGE_TEMP_MINUS_X_DEGREE	50
 
 #define MAX_ALG_NO 10
 

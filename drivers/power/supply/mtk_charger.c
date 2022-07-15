@@ -58,6 +58,10 @@
 #include <linux/reboot.h>
 
 #include "mtk_charger.h"
+#include "mtk_battery.h"
+#include "mtk_battery_daemon.h"
+
+#include "eta6937.h"
 
 struct tag_bootmode {
 	u32 size;
@@ -66,6 +70,26 @@ struct tag_bootmode {
 	u32 boottype;
 };
 
+//Add armin
+bool is_ovp_charge = false;
+bool is_mintemp_charge = false;
+bool is_maxtemp_charge = false;
+bool is_temp45_vo41_charge = false;
+
+#if 1//defined(YK676_CUSTOMER_TRX_S606_HDPLUS)
+bool chr_current_limi=0;
+#endif
+
+#define CHR_TIME_CTRL 0 //zxs 
+#if CHR_TIME_CTRL
+#define CHR_TIME_CTRL_TIMEOUT	300
+static struct hrtimer chr_timer;
+static bool chr_timer_started=0;
+static bool chr_timer_timeout=0;
+static bool chr_timer_full_report=0;
+#endif
+
+static bool chr_cv_limit=0;
 int chr_get_debug_level(void)
 {
 	struct power_supply *psy;
@@ -451,6 +475,64 @@ static void mtk_charger_parse_dt(struct mtk_charger *info,
 		info->data.max_dmivr_charger_current =
 					MAX_DMIVR_CHARGER_CURRENT;
 	}
+#if 1//defined(YKQ_BATTERY_PROFILE_FROM_HEADER)
+
+	/* common */
+	info->config = SINGLE_CHARGER;
+
+	info->data.battery_cv = BATTERY_CV;
+	info->data.max_charger_voltage = V_CHARGER_MAX;
+	info->data.max_charger_voltage_setting = info->data.max_charger_voltage;
+
+	info->data.min_charger_voltage = V_CHARGER_MIN;
+
+	info->data.jeita_temp_above_t4_cv = JEITA_TEMP_ABOVE_T4_CV;
+	info->data.jeita_temp_t3_to_t4_cv = JEITA_TEMP_T3_TO_T4_CV;
+	info->data.jeita_temp_t2_to_t3_cv = JEITA_TEMP_T2_TO_T3_CV;
+	info->data.jeita_temp_t1_to_t2_cv = JEITA_TEMP_T1_TO_T2_CV;
+	info->data.jeita_temp_t0_to_t1_cv = JEITA_TEMP_T0_TO_T1_CV;
+	info->data.jeita_temp_below_t0_cv = JEITA_TEMP_BELOW_T0_CV;
+
+	info->data.temp_t4_thres = TEMP_T4_THRES;
+	info->data.temp_t4_thres_minus_x_degree =
+				TEMP_T4_THRES_MINUS_X_DEGREE;
+	info->data.temp_t3_thres = TEMP_T3_THRES;
+	info->data.temp_t3_thres_minus_x_degree =
+				TEMP_T3_THRES_MINUS_X_DEGREE;
+	info->data.temp_t2_thres = TEMP_T2_THRES;
+	info->data.temp_t2_thres_plus_x_degree =
+				TEMP_T2_THRES_PLUS_X_DEGREE;
+	info->data.temp_t1_thres = TEMP_T1_THRES;
+	info->data.temp_t1_thres_plus_x_degree =
+				TEMP_T1_THRES_PLUS_X_DEGREE;
+	info->data.temp_t0_thres = TEMP_T0_THRES;
+	info->data.temp_t0_thres_plus_x_degree =
+				TEMP_T0_THRES_PLUS_X_DEGREE;
+	info->data.temp_neg_10_thres = TEMP_NEG_10_THRES;
+
+	/* battery temperature protection */
+	info->thermal.sm = BAT_TEMP_NORMAL;
+	info->thermal.enable_min_charge_temp =1;
+	info->thermal.min_charge_temp = MIN_CHARGE_TEMP;
+	info->thermal.min_charge_temp_plus_x_degree =
+				MIN_CHARGE_TEMP_PLUS_X_DEGREE;
+	info->thermal.max_charge_temp = MAX_CHARGE_TEMP;
+	info->thermal.max_charge_temp_minus_x_degree =
+				MAX_CHARGE_TEMP_MINUS_X_DEGREE;
+
+	/* charging current */
+	info->data.usb_charger_current = USB_CHARGER_CURRENT;
+	info->data.ac_charger_current = AC_CHARGER_CURRENT;
+	info->data.ac_charger_input_current = AC_CHARGER_INPUT_CURRENT;
+	info->data.charging_host_charger_current =
+				CHARGING_HOST_CHARGER_CURRENT;
+
+	/* dynamic mivr */
+	info->data.min_charger_voltage_1 = V_CHARGER_MIN_1;
+	info->data.min_charger_voltage_2 = V_CHARGER_MIN_2;
+	info->data.max_dmivr_charger_current =
+				MAX_DMIVR_CHARGER_CURRENT;
+#endif
 }
 
 static void mtk_charger_start_timer(struct mtk_charger *info)
@@ -769,6 +851,20 @@ static ssize_t ADC_Charger_Voltage_show(struct device *dev,
 }
 
 static DEVICE_ATTR_RO(ADC_Charger_Voltage);
+
+// light start
+static ssize_t bat_charger_current_show(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	struct mtk_charger *pinfo = dev->driver_data;
+	int ibus = get_battery_current(pinfo);
+
+	chr_err("%s: %d\n", __func__, ibus);
+	return sprintf(buf, "%d\n", ibus);
+}
+
+static DEVICE_ATTR_RO(bat_charger_current);
+// light end
 
 static ssize_t input_current_show(struct device *dev,
 				  struct device_attribute *attr, char *buf)
@@ -1234,18 +1330,62 @@ static void mtk_chg_get_tchg(struct mtk_charger *info)
 	}
 }
 
+//Add armin
+extern int mtk_battery_external_power_changed_ovp(void);
+extern int mtk_battery_external_power_changed_recover(void);
+extern int mtk_battery_external_power_changed_full(void); //zxs
+#if 0 //zxs //defined(YK676_CUSTOMER_TRX_S606_HDPLUS)
+extern void fan5405_set_iocharge(unsigned int val);
+extern unsigned int fan5405_reg_config_interface(unsigned char RegNum, unsigned char val);
+#endif
+
+static bool charging_done = false;//add by jason
+static bool get_charging_done(struct mtk_charger *info)
+{
+    bool value = false;
+    unsigned int ret = 0;
+
+    ret = (unsigned int)eta6937_get_chip_status(info->chg1_dev, &value);
+    if (value) {
+        chr_err("chargeIC is charing done!\n");
+	} else {
+        chr_info("chargeIC is charging!\n");
+		charging_done = false;
+	}
+
+    return value;
+}
+
+//充电限制功能
+unsigned int yk_stop_percent = 100;
 static void charger_check_status(struct mtk_charger *info)
 {
 	bool charging = true;
 	int temperature;
+#if 0//defined(YK676_CUSTOMER_TRX_S606_HDPLUS)
+	int batvoltage;
+#endif
 	struct battery_thermal_protection_data *thermal;
 
+	//add by wtwd 202111101 begin
+	struct mtk_battery *gm;
+    gm = get_mtk_battery();
+    if (get_charging_done(info) == true) {
+		if (charging_done == false) {
+			printk("charger_check_status notify_fg_chr_full");
+			chr_info("charging full!\n");
+			notify_fg_chr_full(gm);
+			charging_done = true;
+		}
+	}
+	//add by wtwd 202111101 end
+	
 	if (get_charger_type(info) == POWER_SUPPLY_TYPE_UNKNOWN)
 		return;
 
 	temperature = info->battery_temp;
 	thermal = &info->thermal;
-
+	
 	if (info->enable_sw_jeita == true) {
 		do_sw_jeita_state_machine(info);
 		if (info->sw_jeita.charging == false) {
@@ -1253,13 +1393,15 @@ static void charger_check_status(struct mtk_charger *info)
 			goto stop_charging;
 		}
 	} else {
-
 		if (thermal->enable_min_charge_temp) {
 			if (temperature < thermal->min_charge_temp) {
 				chr_err("Battery Under Temperature or NTC fail %d %d\n",
 					temperature, thermal->min_charge_temp);
 				thermal->sm = BAT_TEMP_LOW;
 				charging = false;
+				//Add armin
+				is_mintemp_charge =true;
+			    mtk_battery_external_power_changed_ovp();
 				goto stop_charging;
 			} else if (thermal->sm == BAT_TEMP_LOW) {
 				if (temperature >=
@@ -1271,6 +1413,9 @@ static void charger_check_status(struct mtk_charger *info)
 					thermal->sm = BAT_TEMP_NORMAL;
 				} else {
 					charging = false;
+					//Add armin
+					is_mintemp_charge =true;
+					mtk_battery_external_power_changed_ovp();
 					goto stop_charging;
 				}
 			}
@@ -1281,6 +1426,9 @@ static void charger_check_status(struct mtk_charger *info)
 				temperature, thermal->max_charge_temp);
 			thermal->sm = BAT_TEMP_HIGH;
 			charging = false;
+			//Add armin
+			is_maxtemp_charge =true;
+			mtk_battery_external_power_changed_ovp();
 			goto stop_charging;
 		} else if (thermal->sm == BAT_TEMP_HIGH) {
 			if (temperature
@@ -1292,6 +1440,9 @@ static void charger_check_status(struct mtk_charger *info)
 				thermal->sm = BAT_TEMP_NORMAL;
 			} else {
 				charging = false;
+				//Add armin
+				is_maxtemp_charge = true;
+				mtk_battery_external_power_changed_ovp();
 				goto stop_charging;
 			}
 		}
@@ -1301,16 +1452,119 @@ static void charger_check_status(struct mtk_charger *info)
 
 	if (!mtk_chg_check_vbus(info)) {
 		charging = false;
+		//Add armin
+		is_ovp_charge =true;
+		mtk_battery_external_power_changed_ovp();
 		goto stop_charging;
 	}
+#if 0 //zxs 20210923 for s609
+#if 1//defined(YK676_CUSTOMER_TRX_S606_HDPLUS)
+     // batvoltage = get_battery_voltage(info);
+	if((temperature <= 15)&&(temperature > 0))
+	{
+		chr_current_limi=1;
+		chr_err("%s :trx fan5405,temperatur=%d\n",__func__);
+	}
+	else
+	{
+		chr_current_limi=0;
+	}
+#endif
 
+#if 1 //zxs 20210607
+	if(chr_cv_limit==0)
+	{
+		if(temperature > 45) 
+	    {
+			chr_cv_limit=1;
+	    	printk("chr_cv_limit=%d,temp=%d\n",chr_cv_limit,temperature);
+			fan5405_reg_config_interface(0x02, 0x00);
+		}
+	} else {
+		if(temperature <=45)
+		{
+			chr_cv_limit=0;
+			printk("chr_cv_limit=%d,temp=%d\n",chr_cv_limit,temperature);
+			fan5405_reg_config_interface(0x02, 0xBE);
+		}
+	}
+#else
+	if((temperature > 45) && (batvoltage > 4100))
+	{
+		charging = false;
+		is_temp45_vo41_charge = true;
+		mtk_battery_external_power_changed_ovp();
+		goto stop_charging;
+	}
+#endif
+#endif
 	if (info->cmd_discharging)
 		charging = false;
 	if (info->safety_timeout)
 		charging = false;
 	if (info->vbusov_stat)
 		charging = false;
+	
+	//充电限制功能
+	if((get_uisoc(info) >= yk_stop_percent) && (yk_stop_percent < 100))//todo 100% not stop
+	{
+		printk("trx eta6937,battery_get_uisoc >= %d\n",yk_stop_percent);
+		charging = false;
+		goto stop_charging;
+	}
+	
+	//Add armin
+	if (is_ovp_charge||is_mintemp_charge||is_maxtemp_charge||is_temp45_vo41_charge)
+	{
+		is_ovp_charge =false;
+		is_mintemp_charge =false;
+		is_maxtemp_charge =false;
+		is_temp45_vo41_charge = false;
+		mtk_battery_external_power_changed_recover();
+	}
+    //Add armin end
 
+#if CHR_TIME_CTRL
+	if(chr_timer_started==false)
+	{
+		if(get_uisoc(info)==100)
+		{
+			printk("chr_timer, start... \n");
+			chr_timer_started=true;
+			hrtimer_start(&chr_timer, ktime_set(CHR_TIME_CTRL_TIMEOUT,0), HRTIMER_MODE_REL);
+		}
+	}
+	if(chr_timer_timeout==true)
+	{
+		if(get_uisoc(info)>99)
+		{
+			printk("chr_timer, timeout,charging false \n");
+			charging = false;
+		} else {
+			//chr_timer_started=false;
+			printk("chr_timer, timeout restore\n");
+			chr_timer_timeout=false;
+		}
+	}
+	
+	if(chr_timer_full_report==false)
+	{
+		if(get_uisoc(info)==100)
+		{
+			printk("chr_timer, full report true\n");
+			mtk_battery_external_power_changed_full();//zxs
+			chr_timer_full_report=true;
+		}
+	} else {
+		if(get_uisoc(info)<100)
+		{
+			printk("chr_timer, full report false\n");
+			chr_timer_full_report=false;
+			mtk_battery_external_power_changed_recover();
+		}
+	}
+#endif
+	
 stop_charging:
 	mtk_battery_notify_check(info);
 
@@ -1325,6 +1579,15 @@ stop_charging:
 
 	info->can_charging = charging;
 }
+
+#if CHR_TIME_CTRL
+static enum hrtimer_restart chr_timer_func(struct hrtimer *timer)
+{
+	printk("chr_timer, timeout set true\n");
+	chr_timer_timeout=true;
+	return HRTIMER_NORESTART;
+}
+#endif
 
 static bool charger_init_algo(struct mtk_charger *info)
 {
@@ -1426,6 +1689,9 @@ static int mtk_charger_plug_out(struct mtk_charger *info)
 	pdata1->input_current_limit_by_aicl = -1;
 	pdata2->disable_charging_count = 0;
 
+#if 1//defined(YK676_CUSTOMER_TRX_S606_HDPLUS)
+        chr_current_limi=0;
+#endif
 	notify.evt = EVT_PLUG_OUT;
 	notify.value = 0;
 	for (i = 0; i < MAX_ALG_NO; i++) {
@@ -1436,10 +1702,19 @@ static int mtk_charger_plug_out(struct mtk_charger *info)
 	charger_dev_set_input_current(info->chg1_dev, 100000);
 	charger_dev_set_mivr(info->chg1_dev, info->data.min_charger_voltage);
 	charger_dev_plug_out(info->chg1_dev);
-
+	chr_cv_limit=false;
+#if CHR_TIME_CTRL
+	if((chr_timer_started==true)&&(chr_timer_timeout==false))
+		hrtimer_cancel(&chr_timer);
+	chr_timer_started=false;
+	chr_timer_timeout=false;	
+	chr_timer_full_report=false;
+	printk("chr_timer restore,plug out\n");
+#endif
 	return 0;
 }
 
+extern void set_gpio_charge_en(int enable);
 static int mtk_charger_plug_in(struct mtk_charger *info,
 				int chr_type)
 {
@@ -1468,10 +1743,17 @@ static int mtk_charger_plug_in(struct mtk_charger *info,
 	}
 
 	charger_dev_plug_in(info->chg1_dev);
-
+	chr_cv_limit=false;
+	//fan5405_reg_config_interface(0x02, 0xBE); 
+#if CHR_TIME_CTRL
+	chr_timer_started=false;
+	chr_timer_timeout=false;	
+	chr_timer_full_report=false;
+	printk("chr_timer restore,plug in\n");
+#endif
+     set_gpio_charge_en(0);
 	return 0;
 }
-
 
 static bool mtk_is_charger_on(struct mtk_charger *info)
 {
@@ -1539,7 +1821,7 @@ static char *dump_charger_type(int type)
 		return "unknown";
 	}
 }
-
+extern int battery_get_bat_temperature(void);
 static int charger_routine_thread(void *arg)
 {
 	struct mtk_charger *info = arg;
@@ -1567,7 +1849,8 @@ static int charger_routine_thread(void *arg)
 		spin_unlock_irqrestore(&info->slock, flags);
 		info->charger_thread_timeout = false;
 
-		info->battery_temp = get_battery_temperature(info);
+		info->battery_temp = battery_get_bat_temperature(); //zxs 20210615 //get_battery_temperature(info);
+		//info->battery_temp = get_battery_temperature(info);//mtk orig
 		chr_err("Vbat=%d vbus:%d ibus:%d I=%d T=%d uisoc:%d type:%s>%s pd:%d\n",
 			get_battery_voltage(info),
 			get_vbus(info),
@@ -1700,6 +1983,11 @@ static int mtk_charger_setup_files(struct platform_device *pdev)
 	ret = device_create_file(&(pdev->dev), &dev_attr_ADC_Charger_Voltage);
 	if (ret)
 		goto _out;
+// light start
+	ret = device_create_file(&(pdev->dev), &dev_attr_bat_charger_current);
+	if (ret)
+		goto _out;
+// light end
 	ret = device_create_file(&(pdev->dev), &dev_attr_input_current);
 	if (ret)
 		goto _out;
@@ -2111,6 +2399,11 @@ static int mtk_charger_probe(struct platform_device *pdev)
 	}
 
 	info->chg_alg_nb.notifier_call = chg_alg_event;
+
+#if CHR_TIME_CTRL
+	hrtimer_init(&chr_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	chr_timer.function = chr_timer_func;
+#endif	
 
 	kthread_run(charger_routine_thread, info, "charger_thread");
 
