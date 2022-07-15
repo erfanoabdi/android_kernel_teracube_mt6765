@@ -118,6 +118,9 @@ void set_usb_phy_mode(int mode)
 }
 #endif
 
+extern void eta6937_set_otg_enable(void);
+extern void eta6937_set_otg_disable(void);
+
 static void _set_vbus(int is_on)
 {
 	if (!reg_vbus) {
@@ -136,6 +139,8 @@ static void _set_vbus(int is_on)
 		 */
 		vbus_on = true;
 
+		eta6937_set_otg_enable();
+
 		if (regulator_set_voltage(reg_vbus, 5000000, 5000000))
 			DBG(0, "vbus regulator set voltage failed\n");
 
@@ -144,12 +149,14 @@ static void _set_vbus(int is_on)
 
 		if (regulator_enable(reg_vbus))
 			DBG(0, "vbus regulator enable failed\n");
-
 	} else if (!is_on && vbus_on) {
 		/* disable VBUS 1st then update flag
 		 * to make host mode correct used by PMIC
 		 */
 		vbus_on = false;
+		
+		eta6937_set_otg_disable();
+		
 		regulator_disable(reg_vbus);
 	}
 }
