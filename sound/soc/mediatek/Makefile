@@ -18,6 +18,7 @@ obj-$(CONFIG_SND_SOC_MT6779) += mt6779/
 obj-$(CONFIG_SND_SOC_MT8173) += mt8173/
 obj-$(CONFIG_SND_SOC_AW87519) += aw87519/
 
+obj-y += awinic/
 # include path
 subdir-ccflags-y += -Werror -I$(srctree)/drivers/misc/mediatek/include/mt-plat
 
