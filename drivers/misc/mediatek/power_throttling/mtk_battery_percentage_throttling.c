@@ -15,7 +15,7 @@
 #include <linux/uaccess.h>
 #include <linux/seq_file.h>
 
-#define BAT_PERCENT_LIMIT 15
+#define BAT_PERCENT_LIMIT 5
 
 static struct task_struct *bat_percent_notify_thread;
 static bool bat_percent_notify_flag;
