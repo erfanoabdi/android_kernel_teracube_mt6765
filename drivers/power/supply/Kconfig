@@ -752,6 +752,14 @@ config MTK_PUMP_EXPRESS_40_SUPPORT
 	  Set Yes to enable PE 4.0
 	  Set No to disable PE 4.0
 
+config MTK_FAN5405_SUPPORT
+	bool "MTK_FAN5405_SUPPORT"
+	default n
+	help
+	  This is to enable MediaTek supports to FAN5405.
+	  It depends on config MTK_SMART_BATTERY
+	  and config MTK_SWCHR_SUPPORT
+	  Set to Yes if FAN5405 is used.
 
 config CHARGER_RT9458
 	bool "Charger Driver for Richtek RT9458 Charger IC"

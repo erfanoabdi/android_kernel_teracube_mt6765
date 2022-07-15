@@ -274,6 +274,7 @@ enum {
 	UISOC_ONE_PERCENT,
 	LOW_BAT_VOLT,
 	DLPT_SHUTDOWN,
+	OVERCOLD,
 	SHUTDOWN_FACTOR_MAX
 };
 
@@ -734,6 +735,7 @@ struct simulator_log {
 #define AVGVBAT_ARRAY_SIZE 30
 #define INIT_VOLTAGE 3450
 #define BATTERY_SHUTDOWN_TEMPERATURE 60
+#define BATTERY_SHUTDOWN_TEMPERATURE_OVERCOLD -10
 
 struct shutdown_condition {
 	bool is_overheat;
@@ -741,12 +743,14 @@ struct shutdown_condition {
 	bool is_uisoc_one_percent;
 	bool is_under_shutdown_voltage;
 	bool is_dlpt_shutdown;
+	bool is_overcold;
 };
 
 struct shutdown_controller {
 	struct alarm kthread_fgtimer;
 	bool timeout;
 	bool overheat;
+	bool overcold;	
 	wait_queue_head_t  wait_que;
 	struct shutdown_condition shutdown_status;
 	struct timespec pre_time[SHUTDOWN_FACTOR_MAX];

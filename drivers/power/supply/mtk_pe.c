@@ -819,9 +819,13 @@ static void mtk_pe_parse_dt(struct mtk_pe *pe,
 	u32 val;
 
 	/* PE */
-
+#if 1 //zxs 20210423 yk185
+	pe->ta_12v_support = 0;
+	pe->ta_9v_support = 0;
+#else	
 	pe->ta_12v_support = of_property_read_bool(np, "ta_12v_support");
 	pe->ta_9v_support = of_property_read_bool(np, "ta_9v_support");
+#endif	
 
 	if (of_property_read_u32(np, "pe_ichg_level_threshold", &val) >= 0)
 		pe->pe_ichg_level_threshold = val;

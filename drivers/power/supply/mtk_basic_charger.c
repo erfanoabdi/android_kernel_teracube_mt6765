@@ -341,6 +341,9 @@ static int do_algorithm(struct mtk_charger *info)
 	int ret;
 	int val = 0;
 
+	//此处喂狗充电的时候使用的，OTG不使用这个喂狗接口库 wtwd 20211014
+	charger_dev_kick_wdt(info->chg1_dev);
+	
 	pdata = &info->chg_data[CHG1_SETTING];
 	charger_dev_is_charging_done(info->chg1_dev, &chg_done);
 	is_basic = select_charging_current_limit(info, &info->setting);
@@ -431,7 +434,7 @@ static int do_algorithm(struct mtk_charger *info)
 		}
 	}
 	info->is_chg_done = chg_done;
-
+/*
 	if (is_basic == true) {
 		charger_dev_set_input_current(info->chg1_dev,
 			pdata->input_current_limit);
@@ -446,6 +449,31 @@ static int do_algorithm(struct mtk_charger *info)
 		charger_dev_enable(info->chg1_dev, false);
 	else
 		charger_dev_enable(info->chg1_dev, true);
+
+*/ //zxs 20210425
+
+//zxs 20210507
+#if 1
+	if (info->chr_type == POWER_SUPPLY_TYPE_USB) {
+		pdata->input_current_limit =
+				info->data.usb_charger_current;
+		/* it can be larger */
+		pdata->charging_current_limit =
+				info->data.usb_charger_current;
+		charger_dev_set_charging_current(info->chg1_dev,
+			pdata->charging_current_limit);
+	} 
+	else
+	     {
+		pdata->input_current_limit =
+					info->data.ac_charger_input_current;
+		pdata->charging_current_limit =
+					info->data.ac_charger_current;
+		charger_dev_set_charging_current(info->chg1_dev,
+			pdata->charging_current_limit);
+		}
+#endif	
+//end	
 
 	if (info->chg1_dev != NULL)
 		charger_dev_dump_registers(info->chg1_dev);
