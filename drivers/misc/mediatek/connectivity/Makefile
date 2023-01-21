@@ -53,9 +53,13 @@ endif
     # for gen4m options
     export CONFIG_MTK_COMBO_WIFI_HIF=axi
     export MTK_COMBO_CHIP=CONNAC
+    export BT_PLATFORM=connac1x
     export WLAN_CHIP_ID=6765
     export MTK_ANDROID_WMT=y
-    export BT_PLATFORM=connac1x
+    export MTK_ANDROID_EMI=y
+    export WIFI_IP_SET=1
+    export WIFI_ECO_VER=1
+    export MTK_WLAN_SERVICE=yes
 
     # Do build-in for Makefile checking
     # export CONFIG_WLAN_DRV_BUILD_IN=y
