@@ -40,7 +40,6 @@ ccci_port-y := port_cfg.o \
 		port_char.o \
 		port_ctlmsg.o \
 		port_udc.o \
-		port_misc.o \
 		port_ipc.o \
 		port_net.o \
 		port_poller.o \
