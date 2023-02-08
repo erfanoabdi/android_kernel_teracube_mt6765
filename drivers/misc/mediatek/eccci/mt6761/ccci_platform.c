@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (c) 2019 MediaTek Inc.
  */
 
 
@@ -16,6 +16,7 @@
 #endif
 #include <mt-plat/mtk_ccci_common.h>
 #include "ccci_config.h"
+#include "ccci_common_config.h"
 #include "ccci_modem.h"
 #include "ccci_bm.h"
 #include "ccci_platform.h"
@@ -26,26 +27,9 @@
 
 #define TAG "plat"
 
-int Is_MD_EMI_voilation(void)
-{
-	return 1;
-}
-
-/*
- * when MD attached its codeviser for debuging, this bit will be set.
- * so CCCI should disable some checkings and
- * operations as MD may not respond to us.
- */
-unsigned int ccci_get_md_debug_mode(struct ccci_modem *md)
-{
-	return 0;
-}
-EXPORT_SYMBOL(ccci_get_md_debug_mode);
-
-
 #ifdef FEATURE_LOW_BATTERY_SUPPORT
 static int ccci_md_low_power_notify(
-	struct ccci_modem *md, enum LOW_POEWR_NOTIFY_TYPE type, int level)
+		struct ccci_modem *md, LOW_POEWR_NOTIFY_TYPE type, int level)
 {
 	unsigned int reserve = 0xFFFFFFFF;
 	int ret = 0;
@@ -112,69 +96,12 @@ static void ccci_md_battery_percent_cb(BATTERY_PERCENT_LEVEL level)
 }
 #endif
 
-#define PCCIF_BUSY (0x4)
-#define PCCIF_TCHNUM (0xC)
-#define PCCIF_ACK (0x14)
-#define PCCIF_CHDATA (0x100)
-#define PCCIF_SRAM_SIZE (512)
-#if 0
-void ccci_reset_ccif_hw(unsigned char md_id,
-			int ccif_id, void __iomem *baseA, void __iomem *baseB, struct md_ccif_ctrl *md_ctrl)
-{
-	int i;
-	struct ccci_smem_region *region;
-
-	{
-		int reset_bit = -1;
-
-		switch (ccif_id) {
-		case AP_MD1_CCIF:
-			reset_bit = 8;
-			break;
-		}
-
-		if (reset_bit == -1)
-			return;
-
-		/*
-		 *this reset bit will clear
-		 *CCIF's busy/wch/irq, but not SRAM
-		 */
-		/*set reset bit*/
-		ccci_write32(infra_ao_base, 0x150, 1 << reset_bit);
-		/*clear reset bit*/
-		ccci_write32(infra_ao_base, 0x154, 1 << reset_bit);
-	}
-
-	/* clear SRAM */
-	for (i = 0; i < PCCIF_SRAM_SIZE/sizeof(unsigned int); i++) {
-		ccif_write32(baseA, PCCIF_CHDATA+i*sizeof(unsigned int), 0);
-		ccif_write32(baseB, PCCIF_CHDATA+i*sizeof(unsigned int), 0);
-	}
-
-	/* extend from 36bytes to 72bytes in CCIF SRAM */
-	/* 0~60bytes for bootup trace,
-	 *last 12bytes for magic pattern,smem address and size
-	 */
-	region = ccci_md_get_smem_by_user_id(md_id,
-		SMEM_USER_RAW_MDSS_DBG);
-	ccif_write32(baseA,
-		PCCIF_CHDATA + PCCIF_SRAM_SIZE - 3 * sizeof(u32),
-		0x7274626E);
-	ccif_write32(baseA,
-		PCCIF_CHDATA + PCCIF_SRAM_SIZE - 2 * sizeof(u32),
-		region->base_md_view_phy);
-	ccif_write32(baseA,
-		PCCIF_CHDATA + PCCIF_SRAM_SIZE - sizeof(u32),
-		region->size);
-}
-#endif
-int ccci_platform_init(struct ccci_modem *md)
+static int ccci_platform_init(struct ccci_modem *md)
 {
 	struct device_node *node;
 	/* Get infra cfg ao base */
 	node = of_find_compatible_node(NULL, NULL,
-		"mediatek,infracfg_ao");
+		"mediatek,mt6761-infracfg");
 	md_cd_plat_val_ptr.infra_ao_base = of_iomap(node, 0);
 	if (!md_cd_plat_val_ptr.infra_ao_base) {
 		CCCI_ERROR_LOG(md->index, TAG,
@@ -191,4 +118,11 @@ int ccci_platform_init(struct ccci_modem *md)
 #endif
 	return 0;
 }
+
+void ccci_platform_init_6761(struct ccci_modem *md)
+{
+
+	ccci_platform_init(md);
+}
+
 

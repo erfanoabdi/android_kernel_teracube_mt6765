@@ -1,15 +1,6 @@
-#
-# Copyright (C) 2016 MediaTek Inc.
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 2 as
-# published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See http://www.gnu.org/licenses/gpl-2.0.html for more details.
-#
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2019 MediaTek Inc.
+
 
 ifeq ($(CONFIG_MTK_ECCCI_DRIVER), y)
 
@@ -21,13 +12,9 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/pmic/
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi_bwl/$(MTK_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/clk/mediatek
+ccflags-y += -I$(srctree)/drivers/devfreq/
 # security objects
 MASP_CORE_DRIVER_DIR := $(srctree)/drivers/misc/mediatek/drivers/masp
-
-ifeq ($(CONFIG_MTK_QOS_SUPPORT), y)
-ccflags-y += -I$(srctree)/drivers/devfreq/
-endif
 
 ifeq ($(CONFIG_MTK_SECURITY_SW_SUPPORT), y)
 ifeq ($(CONFIG_CUSTOM_SEC_AUTH_SUPPORT), y)
@@ -56,12 +43,9 @@ obj-$(CONFIG_MTK_ECCCI_DRIVER) := ccci.o
 
 # platform dependent parts
 ccci-y := ccci_platform.o $(core_obj) $(mach_obj) $(sec_obj)
-ifeq (y, $(filter y, $(CONFIG_MACH_MT6781)))
-ccci-y += ap_md_reg_dump_6781.o
-else
-ccci-y += ap_md_reg_dump.o
-endif
+ifeq ($(CONFIG_MTK_ECCCI_CLDMA), y)
 ccci-y += md_sys1_platform.o
+endif
 
 else
 obj-  := dummy.o # avoid build error

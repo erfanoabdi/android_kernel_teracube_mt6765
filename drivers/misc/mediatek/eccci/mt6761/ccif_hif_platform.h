@@ -1,30 +1,26 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2019 MediaTek Inc.
-*/
+ * Copyright (C) 2019 MediaTek Inc.
+ */
+
 
 #ifndef __CCIF_HIF_PLATFORM_H__
 #define __CCIF_HIF_PLATFORM_H__
 #include "ccci_config.h"
-
+#include "ccci_common_config.h"
 #include <mt-plat/sync_write.h>
 
 extern unsigned int devapc_check_flag;
-extern spinlock_t devapc_flag_lock;
-
 #define ccif_write32(b, a, v) \
 do { \
-	unsigned long flags; \
-	\
-	spin_lock_irqsave(&devapc_flag_lock, flags); \
 	if (devapc_check_flag == 1) \
 		mt_reg_sync_writel(v, (b) + (a)); \
-	spin_unlock_irqrestore(&devapc_flag_lock, flags); \
 } while (0)
 
 #define ccif_write16(b, a, v)           mt_reg_sync_writew(v, (b)+(a))
 #define ccif_write8(b, a, v)            mt_reg_sync_writeb(v, (b)+(a))
-int ccif_read32(void *b, unsigned long a);
+#define ccif_read32(b, a) \
+	((devapc_check_flag == 1) ? ioread32((void __iomem *)((b)+(a))) : 0)
 
 #define ccif_read16(b, a)               ioread16((void __iomem *)((b)+(a)))
 #define ccif_read8(b, a)                ioread8((void __iomem *)((b)+(a)))
@@ -38,19 +34,11 @@ int ccif_read32(void *b, unsigned long a);
 #define APCCIF_ACK    (0x14)
 #define APCCIF_CHDATA (0x100)
 
-#if (MD_GENERATION <= 6292)
-#define RINGQ_BASE (8)
-#define RINGQ_SRAM (7)
-#define RINGQ_EXP_BASE (0)
-#define CCIF_CH_NUM 16
-#define AP_MD_CCB_WAKEUP (8)
-#else
 #define RINGQ_BASE (0)
 #define RINGQ_SRAM (15)
 #define RINGQ_EXP_BASE (15)
 #define CCIF_CH_NUM 24
 #define AP_MD_CCB_WAKEUP (7)
-#endif
 
 /*AP to MD*/
 #define H2D_EXCEPTION_ACK        (RINGQ_EXP_BASE+1)
@@ -88,5 +76,7 @@ int ccif_read32(void *b, unsigned long a);
 
 /* peer */
 #define AP_MD_PEER_WAKEUP	(RINGQ_EXP_BASE+5)
+#define MD_PCORE_PCCIF_BASE 0x20510000
+#define CCIF_SRAM_SIZE 512
 
 #endif /*__CCIF_HIF_PLATFORM_H__*/

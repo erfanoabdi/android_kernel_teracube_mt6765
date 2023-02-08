@@ -1,15 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2019 MediaTek Inc.
-*/
+ * Copyright (C) 2019 MediaTek Inc.
+ */
+
 
 #ifndef __MD_SYS1_PLATFORM_H__
 #define __MD_SYS1_PLATFORM_H__
 
 #include <linux/skbuff.h>
 #include "ccif_hif_platform.h"
-#include <mt-plat/mtk_secure_api.h>
-#include "ccci_platform.h"
+#include <linux/soc/mediatek/mtk-pm-qos.h>
+
 
 /* this is the platform header file for CLDMA MODEM, not just CLDMA! */
 
@@ -208,7 +209,6 @@ struct md_hw_info {
 	unsigned long ap_ccif_irq1_flags;
 	unsigned long md_wdt_irq_flags;
 	unsigned long ap2md_bus_timeout_irq_flags;
-	void *hif_hw_info;
 
 	/*HW info - plat*/
 	struct ccci_plat_ops *plat_ptr;
@@ -216,28 +216,14 @@ struct md_hw_info {
 	unsigned int md_gen;
 };
 
-enum MD_REG_ID {
-	MD_REG_AP_MDSRC_REQ = 0,
-	MD_REG_PC_MONITOR,
-	MD_REG_PLL_REG,
-	MD_REG_BUS,
-	MD_REG_MDMCU_BUSMON,
-	MD_REG_MDINFRA_BUSMON,
-	MD_REG_ECT,
-	MD_REG_TOPSM_REG,
-	MD_REG_MD_RGU_REG,
-	MD_REG_OST_STATUS,
-	MD_REG_CSC_REG,
-	MD_REG_ELM_REG,
-};
 
-int ccci_modem_remove(struct platform_device *dev);
-void ccci_modem_shutdown(struct platform_device *dev);
-int ccci_modem_suspend(struct platform_device *dev, pm_message_t state);
-int ccci_modem_resume(struct platform_device *dev);
-int ccci_modem_pm_suspend(struct device *device);
-int ccci_modem_pm_resume(struct device *device);
-int ccci_modem_pm_restore_noirq(struct device *device);
+//int ccci_modem_remove(struct platform_device *dev);
+//void ccci_modem_shutdown(struct platform_device *dev);
+//int ccci_modem_suspend(struct platform_device *dev, pm_message_t state);
+//int ccci_modem_resume(struct platform_device *dev);
+//int ccci_modem_pm_suspend(struct device *device);
+//int ccci_modem_pm_resume(struct device *device);
+//int ccci_modem_pm_restore_noirq(struct device *device);
 //int md_cd_power_on(struct ccci_modem *md);
 //int md_cd_power_off(struct ccci_modem *md, unsigned int timeout);
 //int md_cd_soft_power_off(struct ccci_modem *md, unsigned int mode);
@@ -268,8 +254,13 @@ void md_cd_dump_pccif_reg(struct ccci_modem *md);
 //void md_cd_check_md_DCM(struct md_cd_ctrl *md_ctrl);
 
 //extern unsigned long infra_ao_base;
-//extern unsigned int devapc_check_flag;
+extern unsigned int devapc_check_flag;
 extern void ccci_mem_dump(int md_id, void *start_addr, int len);
+extern int ccci_modem_init_common(struct platform_device *plat_dev,
+	struct ccci_dev_cfg *dev_cfg, struct md_hw_info *md_hw);
+
+
 extern void ccci_modem_plt_resume(struct ccci_modem *md);
 extern int ccci_modem_plt_suspend(struct ccci_modem *md);
+
 #endif				/* __CLDMA_PLATFORM_H__ */

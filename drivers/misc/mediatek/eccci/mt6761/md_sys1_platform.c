@@ -92,7 +92,7 @@ static int md_cd_vcore_config(unsigned int md_id, unsigned int hold_req);
 
 
 struct ccci_plat_ops md_cd_plat_ptr = {
-	.init = &ccci_platform_init_6765,
+	.init = &ccci_platform_init_6761,
 	//.cldma_hw_rst = &md_cldma_hw_reset,
 	//.set_clk_cg = &ccci_set_clk_cg,
 	.remap_md_reg = &md_cd_io_remap_md_side_register,
@@ -181,7 +181,7 @@ int md_cd_get_modem_hw_info(struct platform_device *dev_ptr,
 		of_property_read_u32(dev_ptr->dev.of_node,
 			"mediatek,md_generation", &md_cd_plat_val_ptr.md_gen);
 		node_infrao = of_find_compatible_node(NULL, NULL,
-			"mediatek,mt6765-infracfg");
+			"mediatek,mt6761-infracfg");
 		md_cd_plat_val_ptr.infra_ao_base = of_iomap(node_infrao, 0);
 
 		hw_info->plat_ptr = &md_cd_plat_ptr;
@@ -213,7 +213,7 @@ int md_cd_get_modem_hw_info(struct platform_device *dev_ptr,
 			}
 		}
 		node = of_find_compatible_node(NULL, NULL,
-			"mediatek,mt6765-apmixedsys");
+			"mediatek,mt6761-apmixedsys");
 		hw_info->ap_mixed_base = (unsigned long)of_iomap(node, 0);
 		if (!hw_info->ap_mixed_base) {
 			CCCI_ERROR_LOG(-1, TAG,
@@ -1307,7 +1307,7 @@ static const struct dev_pm_ops ccci_modem_pm_ops = {
 
 #ifdef CONFIG_OF
 static const struct of_device_id ccci_modem_of_ids[] = {
-	{.compatible = "mediatek,mddriver-mt6765",},
+	{.compatible = "mediatek,mddriver-mt6761",},
 	{}
 };
 #endif
@@ -1315,7 +1315,7 @@ static const struct of_device_id ccci_modem_of_ids[] = {
 static struct platform_driver ccci_modem_driver = {
 
 	.driver = {
-		   .name = "driver_modem_mt6765",
+		   .name = "driver_modem_mt6761",
 #ifdef CONFIG_OF
 		   .of_match_table = ccci_modem_of_ids,
 #endif
